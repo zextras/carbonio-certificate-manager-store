@@ -1,7 +1,7 @@
 /*
  * ***** BEGIN LICENSE BLOCK *****
  * Zimbra Collaboration Suite Server
- * Copyright (C) 2007, 2008, 2009, 2010 Zimbra, Inc.
+ * Copyright (C) 2007, 2008, 2009, 2010, 2011 VMware, Inc.
  * 
  * The contents of this file are subject to the Zimbra Public License
  * Version 1.3 ("License"); you may not use this file except in
@@ -66,7 +66,8 @@ public class MyExportPrivKey {
             fw.write(encoded);
             fw.write("\n");
             fw.write("-----END PRIVATE KEY-----");
-            fw.close(); /*XXX*/input.close();
+            fw.close(); 
+            input.close();
         }
 
         /**
@@ -79,7 +80,7 @@ public class MyExportPrivKey {
          * @throws Exception
          * 
          */
-        /*public static void main(String args[]) throws Exception{
+        public static void main(String args[]) throws Exception{
                MyExportPrivKey export=new MyExportPrivKey();
                 export.keystoreFile=new File(args[0]);
                 export.keyStoreType=args[1];
@@ -87,5 +88,5 @@ public class MyExportPrivKey {
                 export.alias=args[3];
                 export.exportedFile=new File(args[4]);
                 export.export();
-        }*/
+        }
 }
