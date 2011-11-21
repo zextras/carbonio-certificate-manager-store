@@ -1,7 +1,7 @@
 /*
  * ***** BEGIN LICENSE BLOCK *****
  * Zimbra Collaboration Suite Server
- * Copyright (C) 2010, 2011 VMware, Inc.
+ * Copyright (C) 2007, 2008, 2009, 2010 Zimbra, Inc.
  * 
  * The contents of this file are subject to the Zimbra Public License
  * Version 1.3 ("License"); you may not use this file except in
@@ -14,54 +14,36 @@
  */
 package com.zimbra.cert;
 
-import java.io.*;
-import java.util.List;
-import java.util.Map;
+import java.io.File;
+import java.io.IOException;
+import java.text.SimpleDateFormat;
 import java.util.Date;
-import java.text.DateFormat; 
-import java.text.ParseException; 
-import java.text.SimpleDateFormat; 
+import java.util.Map;
 
-import com.zimbra.common.localconfig.LC;
 import com.zimbra.common.service.ServiceException;
-import com.zimbra.common.soap.AdminConstants;
+import com.zimbra.common.soap.CertMgrConstants;
 import com.zimbra.common.soap.Element;
 import com.zimbra.common.util.ByteUtil;
 import com.zimbra.common.util.ZimbraLog;
-import com.zimbra.common.util.StringUtil;
 import com.zimbra.cs.account.Provisioning;
-import com.zimbra.cs.account.Server;
-import com.zimbra.cs.account.Provisioning.ServerBy;
-import com.zimbra.cs.account.accesscontrol.AdminRight;
-import com.zimbra.cs.account.accesscontrol.Rights.Admin;
-import com.zimbra.cs.rmgmt.RemoteCommands;
 import com.zimbra.cs.rmgmt.RemoteManager;
 import com.zimbra.cs.rmgmt.RemoteResult;
-import com.zimbra.cs.rmgmt.RemoteResultParser;
-import com.zimbra.cs.service.FileUploadServlet;
-import com.zimbra.cs.service.FileUploadServlet.Upload;
 import com.zimbra.cs.service.admin.AdminDocumentHandler;
-import com.zimbra.cs.service.admin.AdminRightCheckPoint;
 import com.zimbra.soap.ZimbraSoapContext;
 
-
-
-
 public class VerifyCertKey extends AdminDocumentHandler {
-        private final static String CERT = "cert";
-        private final static String PRIVKEY = "privkey";
-        private final static String TYPE = "type";
         final static String CERT_TYPE_SELF= "self" ;
         final static String CERT_TYPE_COMM = "comm" ;
     	private Provisioning prov = null;
 	private boolean verifyResult = false;
-   	
-   	public Element handle(Element request, Map<String, Object> context) throws ServiceException {
+
+    @Override
+    public Element handle(Element request, Map<String, Object> context) throws ServiceException {
    		ZimbraSoapContext lc = getZimbraSoapContext(context);
    		prov = Provisioning.getInstance();
-   		String certBuffer = request.getAttribute(CERT) ;
-   		String prvkeyBuffer = request.getAttribute(PRIVKEY) ;
-   		Element response = lc.createElement(ZimbraCertMgrService.VERIFY_CERTKEY_RESPONSE);
+   		String certBuffer = request.getAttribute(CertMgrConstants.E_cert) ;
+   		String prvkeyBuffer = request.getAttribute(CertMgrConstants.A_privkey) ;
+   		Element response = lc.createElement(CertMgrConstants.VERIFY_CERTKEY_RESPONSE);
 
 		String timeStamp = getCurrentTimeStamp();
 		String storedPath = ZimbraCertMgrExt.COMM_CRT_KEY_DIR + "." + timeStamp + "/";
@@ -88,7 +70,7 @@ public class VerifyCertKey extends AdminDocumentHandler {
 
 			if(certBuffer_t.length() == 0 || prvkeyBuffer_t.length() == 0) {
 				// invalid certificate or privkey, return invalid
-				response.addAttribute("verifyResult", "invalid");
+				response.addAttribute(CertMgrConstants.A_verifyResult, "invalid");
 				return response;
 			}
 
@@ -148,8 +130,8 @@ public class VerifyCertKey extends AdminDocumentHandler {
             	}
 
 		if(verifyResult)
-	        	response.addAttribute("verifyResult", "true");
-		else response.addAttribute("verifyResult", "false");
+	        	response.addAttribute(CertMgrConstants.A_verifyResult, "true");
+		else response.addAttribute(CertMgrConstants.A_verifyResult, "false");
 	        return response;
 
   		
