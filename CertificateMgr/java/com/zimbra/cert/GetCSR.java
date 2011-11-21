@@ -1,7 +1,7 @@
 /*
  * ***** BEGIN LICENSE BLOCK *****
  * Zimbra Collaboration Suite Server
- * Copyright (C) 2007, 2008, 2009, 2010 Zimbra, Inc.
+ * Copyright (C) 2007, 2008, 2009, 2010, 2011 VMware, Inc.
  * 
  * The contents of this file are subject to the Zimbra Public License
  * Version 1.3 ("License"); you may not use this file except in
@@ -14,6 +14,7 @@
  */
 package com.zimbra.cert;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.Enumeration;
 import java.util.HashMap;
@@ -21,20 +22,22 @@ import java.util.List;
 import java.util.Map;
 import java.util.Vector;
 
-import com.zimbra.common.account.Key.ServerBy;
+import sun.security.x509.SubjectAlternativeNameExtension;
+
+import com.sun.corba.se.spi.orbutil.fsm.Guard.Result;
 import com.zimbra.common.localconfig.LC;
 import com.zimbra.common.service.ServiceException;
-import com.zimbra.common.soap.AdminConstants;
-import com.zimbra.common.soap.CertMgrConstants;
 import com.zimbra.common.soap.Element;
 import com.zimbra.common.util.ZimbraLog;
 import com.zimbra.cs.account.Provisioning;
 import com.zimbra.cs.account.Server;
+import com.zimbra.cs.account.Provisioning.ServerBy;
 import com.zimbra.cs.account.accesscontrol.AdminRight;
 import com.zimbra.cs.account.accesscontrol.Rights.Admin;
 import com.zimbra.cs.rmgmt.RemoteManager;
 import com.zimbra.cs.rmgmt.RemoteResult;
 import com.zimbra.cs.service.admin.AdminDocumentHandler;
+import com.zimbra.cs.service.admin.AdminRightCheckPoint;
 import com.zimbra.soap.ZimbraSoapContext;
 
 
@@ -51,7 +54,7 @@ public class GetCSR extends AdminDocumentHandler {
         Provisioning prov = Provisioning.getInstance();
         
         Server server = null;
-        String serverId = request.getAttribute(AdminConstants.A_SERVER) ;
+        String serverId = request.getAttribute("server") ;
     	if (serverId != null && serverId.equals(ZimbraCertMgrExt.ALL_SERVERS)) {
         	server = prov.getLocalServer() ;
         }else { 
@@ -66,7 +69,7 @@ public class GetCSR extends AdminDocumentHandler {
         
         
         String cmd = ZimbraCertMgrExt.GET_CSR_CMD ;
-        String type = request.getAttribute(AdminConstants.A_TYPE) ;
+        String type = request.getAttribute("type") ;
         if (type == null || type.length() == 0 ) {
             throw ServiceException.INVALID_REQUEST("No valid CSR type is set.", null);
         }else if (type.equals(CSR_TYPE_SELF) || type.equals(CSR_TYPE_COMM)) {
@@ -78,7 +81,7 @@ public class GetCSR extends AdminDocumentHandler {
         RemoteManager rmgr = RemoteManager.getRemoteManager(server);
         ZimbraLog.security.debug("***** Executing the cmd = " + cmd) ;
         RemoteResult rr = rmgr.execute(cmd);
-        Element response = lc.createElement(CertMgrConstants.GET_CSR_RESPONSE);
+        Element response = lc.createElement(ZimbraCertMgrService.GET_CSR_RESPONSE);
         String csr_exists = "0" ;
         String isComm = "0" ;
         if (type.equals(CSR_TYPE_COMM)) {
@@ -105,7 +108,7 @@ public class GetCSR extends AdminDocumentHandler {
                 
                 if (subjectAltNames != null && (!subjectAltNames.isEmpty())) {
                     for (Enumeration<String> e = subjectAltNames.elements(); e.hasMoreElements();) {
-                        Element el = response.addElement(CertMgrConstants.E_SUBJECT_ALT_NAME);
+                        Element el = response.addElement(GenerateCSR.SUBJECT_ALT_NAME);
                         String value = e.nextElement();
                         //ZimbraLog.security.info("Add the SubjectAltNames element " + value);
                         el.setText(value) ;
@@ -123,9 +126,9 @@ public class GetCSR extends AdminDocumentHandler {
             throw ServiceException.FAILURE("exception occurred handling command", ioe);
         }
          
-        response.addAttribute(CertMgrConstants.A_csr_exists, csr_exists) ;
-        response.addAttribute(CertMgrConstants.A_isComm, isComm) ;
-        response.addAttribute(AdminConstants.A_SERVER, server.getName());
+        response.addAttribute("csr_exists", csr_exists) ;
+        response.addAttribute("isComm", isComm) ;
+        response.addAttribute("server", server.getName());
         return response ;
     }
     
