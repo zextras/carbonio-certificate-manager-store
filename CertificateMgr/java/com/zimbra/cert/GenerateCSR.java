@@ -1,7 +1,7 @@
 /*
  * ***** BEGIN LICENSE BLOCK *****
  * Zimbra Collaboration Suite Server
- * Copyright (C) 2007, 2008, 2009, 2010, 2011 VMware, Inc.
+ * Copyright (C) 2007, 2008, 2009, 2010 Zimbra, Inc.
  * 
  * The contents of this file are subject to the Zimbra Public License
  * Version 1.3 ("License"); you may not use this file except in
@@ -14,33 +14,32 @@
  */
 package com.zimbra.cert;
 
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.zimbra.common.account.Key.ServerBy;
 import com.zimbra.common.service.ServiceException;
 import com.zimbra.common.soap.AdminConstants;
+import com.zimbra.common.soap.CertMgrConstants;
 import com.zimbra.common.soap.Element;
-import com.zimbra.common.util.StringUtil;
+import com.zimbra.common.util.ZimbraLog;
 import com.zimbra.cs.account.Provisioning;
 import com.zimbra.cs.account.Server;
-import com.zimbra.cs.account.Provisioning.ServerBy;
 import com.zimbra.cs.account.accesscontrol.AdminRight;
 import com.zimbra.cs.account.accesscontrol.Rights.Admin;
 import com.zimbra.cs.rmgmt.RemoteManager;
 import com.zimbra.cs.rmgmt.RemoteResult;
 import com.zimbra.cs.service.admin.AdminDocumentHandler;
-import com.zimbra.cs.service.admin.AdminRightCheckPoint;
 import com.zimbra.soap.ZimbraSoapContext;
-import com.zimbra.common.util.ZimbraLog;
 
 
 public class GenerateCSR extends AdminDocumentHandler {
     private final static String CSR_TYPE_SELF = "self" ;
     private final static String CSR_TYPE_COMM = "comm" ;
-    private final static String SUBJECT = "subject" ;
-    private final static String [] SUBJECT_ATTRS=  {"C", "ST", "L", "O", "OU", "CN"} ;
-    final static String SUBJECT_ALT_NAME = "SubjectAltName" ;
+    private final static String [] SUBJECT_ATTRS = {
+        CertMgrConstants.E_subjectAttr_C, CertMgrConstants.E_subjectAttr_ST,
+        CertMgrConstants.E_subjectAttr_L, CertMgrConstants.E_subjectAttr_O,
+        CertMgrConstants.E_subjectAttr_OU, CertMgrConstants.E_subjectAttr_CN };
     
     @Override
     public Element handle(Element request, Map<String, Object> context) throws ServiceException {
@@ -51,7 +50,7 @@ public class GenerateCSR extends AdminDocumentHandler {
         Provisioning prov = Provisioning.getInstance();
         
         Server server = null;
-        String serverId = request.getAttribute("server") ;
+        String serverId = request.getAttribute(AdminConstants.A_SERVER) ;
 
         if (serverId != null && serverId.equals(ZimbraCertMgrExt.ALL_SERVERS)) {
         	server = prov.getLocalServer() ;
@@ -66,9 +65,9 @@ public class GenerateCSR extends AdminDocumentHandler {
         ZimbraLog.security.debug("Generate the CSR info from server:  " + server.getName()) ;
         
         String cmd = ZimbraCertMgrExt.CREATE_CSR_CMD  ;
-        String newCSR = request.getAttribute("new") ;
-        String type = request.getAttribute("type") ;
-        String keysize = request.getAttribute ("keysize") ; 
+        String newCSR = request.getAttribute(CertMgrConstants.A_new);
+        String type = request.getAttribute(AdminConstants.A_TYPE);
+        String keysize = request.getAttribute (CertMgrConstants.E_KEYSIZE) ; 
         if (keysize == null || (!(keysize.equalsIgnoreCase("1024") || keysize.equalsIgnoreCase("2048")))) {
             keysize = "2048";
         }
@@ -100,8 +99,8 @@ public class GenerateCSR extends AdminDocumentHandler {
             ZimbraLog.security.info("No new CSR need to be created.");
         }
         
-        Element response = lc.createElement(ZimbraCertMgrService.GEN_CSR_RESPONSE);
-        response.addAttribute("server", server.getName());
+        Element response = lc.createElement(CertMgrConstants.GEN_CSR_RESPONSE);
+        response.addAttribute(AdminConstants.A_SERVER, server.getName());
         return response;  
     }
 
@@ -129,7 +128,7 @@ public class GenerateCSR extends AdminDocumentHandler {
     public static String  getSubjectAltNames (Element request) {
         String subjectAltNames = "" ;
       
-        for (Element a : request.listElements(SUBJECT_ALT_NAME)) {
+        for (Element a : request.listElements(CertMgrConstants.E_SUBJECT_ALT_NAME)) {
             String value = a.getText();
             if (value != null && value.length() > 0) {
                 if (subjectAltNames.length() > 0) {
