@@ -125,10 +125,10 @@ public class GenerateCSR extends AdminDocumentHandler {
     throws ServiceException {
         StringBuilder subject = new StringBuilder();
         String iso3166_1_alpha2_countryCode = req.getC();
-        if (!iso3166_1_alpha2_countryCode.matches("[a-zA-Z][a-zA-Z]")) {
+        if (iso3166_1_alpha2_countryCode != null && !iso3166_1_alpha2_countryCode.matches("[a-zA-Z][a-zA-Z]")) {
             throw ServiceException.INVALID_REQUEST(String.format(
                     "Country Code '%s' is not valid.", iso3166_1_alpha2_countryCode), null);
-            }
+        }
         appendToSubject(subject, CertMgrConstants.E_subjectAttr_C, iso3166_1_alpha2_countryCode);
         appendToSubject(subject, CertMgrConstants.E_subjectAttr_ST, req.getSt());
         appendToSubject(subject, CertMgrConstants.E_subjectAttr_L, req.getL());
