@@ -85,7 +85,7 @@ public class GenerateCSR extends AdminDocumentHandler {
             } else if (!digest.matches("[a-zA-Z0-9]*")) {
                 throw ServiceException.INVALID_REQUEST(String.format("digest '%s' is not valid.", digest), null);
             }
-            cmd.append(" -new -digest ").append(digest).append(" -keysize ").append(keysize);
+            cmd.append(" -new -keysize ").append(keysize).append(" -digest ").append(digest);
             appendSubjectArgToCommand(cmd, getSubject(req));
 
             String subjectAltNames = getSubjectAltNames(req.getSubjectAltNames()) ;
