@@ -20,9 +20,6 @@
 			<include name="**/*.jar"/>
 		</fileset>
 	</path>
-	<fileset dir="${src.java.dir}">
-		<include name="**/*.java" />
-	</fileset>
 
 	<target name="build-init">
 		<mkdir dir="${build.classes.dir}" />

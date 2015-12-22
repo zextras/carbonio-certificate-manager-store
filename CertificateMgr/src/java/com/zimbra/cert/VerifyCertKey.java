@@ -166,13 +166,10 @@ public class VerifyCertKey extends AdminDocumentHandler {
 			out += (header + repStr + end + "\n");
 		}
 		return out;
-		
 	}
-	
-	private String getCurrentTimeStamp() {
+
+    private String getCurrentTimeStamp() {
 		SimpleDateFormat fmt = new SimpleDateFormat("yyyyMMdd.HHmmss.SSS");
-		return 	fmt.format(new Date());
+		return fmt.format(new Date());
 	}
 }
-
-
