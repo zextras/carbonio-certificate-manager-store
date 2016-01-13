@@ -73,7 +73,4 @@ public class ZimbraCertMgrExt implements ZimbraExtension {
     public void init() throws ServiceException {
         SoapServlet.addService("AdminServlet", new ZimbraCertMgrService());
     }
-
 }
-
-
