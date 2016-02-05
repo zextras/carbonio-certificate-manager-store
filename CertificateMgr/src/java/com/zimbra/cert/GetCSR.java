@@ -135,6 +135,6 @@ public class GetCSR extends AdminDocumentHandler {
     
     @Override
     public void docRights(List<AdminRight> relatedRights, List<String> notes) {
-    	 relatedRights.add(Admin.R_getCSR);
+        relatedRights.add(Admin.R_getCSR);
     }
 }

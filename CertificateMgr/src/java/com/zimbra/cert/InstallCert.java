@@ -365,6 +365,6 @@ public class InstallCert extends AdminDocumentHandler {
 
     @Override
     public void docRights(List<AdminRight> relatedRights, List<String> notes) {
-    	relatedRights.add(Admin.R_installCertificate);
+        relatedRights.add(Admin.R_installCertificate);
     }
 }
