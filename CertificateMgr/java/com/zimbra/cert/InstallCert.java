@@ -25,6 +25,7 @@ import java.util.Map;
 
 import com.google.common.base.Strings;
 import com.zimbra.common.account.Key.ServerBy;
+import com.zimbra.common.localconfig.LC;
 import com.zimbra.common.service.ServiceException;
 import com.zimbra.common.soap.AdminConstants;
 import com.zimbra.common.soap.CertMgrConstants;
@@ -36,6 +37,7 @@ import com.zimbra.cs.account.Provisioning;
 import com.zimbra.cs.account.Server;
 import com.zimbra.cs.account.accesscontrol.AdminRight;
 import com.zimbra.cs.account.accesscontrol.Rights.Admin;
+import com.zimbra.cs.ldap.LdapUtil;
 import com.zimbra.cs.rmgmt.RemoteManager;
 import com.zimbra.cs.rmgmt.RemoteResult;
 import com.zimbra.cs.service.FileUploadServlet;
@@ -54,7 +56,10 @@ public class InstallCert extends AdminDocumentHandler {
     private Server server = null;
 
     private Provisioning prov = null;
-
+    private String uploadedCertFileName = null;
+    private String uploadedCrtChainFileName = null;
+    private String savedCommKeyFileName = null;
+    private boolean isCommercial = false;
     @Override
     public Element handle(Element request, Map<String, Object> context) throws ServiceException {
         ZimbraSoapContext lc = getZimbraSoapContext(context);
@@ -67,7 +72,7 @@ public class InstallCert extends AdminDocumentHandler {
         if (serverId != null && serverId.equals(ZimbraCertMgrExt.ALL_SERVERS)) {
             server = prov.getLocalServer() ;
             isTargetAllServer = true ;
-        }else {
+        } else {
             server = prov.get(ServerBy.id, serverId);
         }
 
@@ -75,7 +80,7 @@ public class InstallCert extends AdminDocumentHandler {
             throw ServiceException.INVALID_REQUEST("Server with id " + serverId + " could not be found", null);
         }
         checkRight(lc, context, server, Admin.R_installCertificate);
-        ZimbraLog.security.debug("Install the certificateion for server: %s", server.getName()) ;
+        ZimbraLog.security.debug("Install certificate for server: %s", server.getName());
         //the deployment of certs should happen on the target server
         RemoteManager rmgr = RemoteManager.getRemoteManager(server);
         StringBuilder cmd = new StringBuilder(ZimbraCertMgrExt.CREATE_CRT_CMD);
@@ -83,21 +88,26 @@ public class InstallCert extends AdminDocumentHandler {
         String certType = req.getType();
         if (Strings.isNullOrEmpty(certType)) {
             throw ServiceException.INVALID_REQUEST("No valid certificate type is set", null);
-        }else if (certType.equals(CERT_TYPE_SELF) || certType.equals(CERT_TYPE_COMM)) {
+        } else if (certType.equals(CERT_TYPE_SELF) || certType.equals(CERT_TYPE_COMM)) {
             deploycrt_cmd.append(" ").append(certType);
-        }else {
+        } else {
             throw ServiceException.INVALID_REQUEST("Invalid certificate type: " + certType + ". Must be (self|comm).",
                     null);
         }
-
-        if (certType.equals("comm")) {
+        isCommercial = certType.equals(CERT_TYPE_COMM);
+        if (isCommercial) {
+            uploadedCertFileName = LC.zimbra_tmp_directory.value() + File.separator + LdapUtil.generateUUID() + ".crt";
+            uploadedCrtChainFileName = LC.zimbra_tmp_directory.value() + File.separator + LdapUtil.generateUUID()
+                    + "_chain.crt";
+            savedCommKeyFileName = LC.zimbra_tmp_directory.value() + File.separator + LdapUtil.generateUUID()
+                    + "_current_comm.key";
             checkUploadedCommCert(req, lc, isTargetAllServer) ;
         }
 
         //always set the -new flag for the cmd since the ac requests for a new cert always
         cmd.append(" -new");
 
-        if (!certType.equals("comm")) {
+        if (!isCommercial) {
             String validation_days = req.getValidationDays();
             if (!Strings.isNullOrEmpty(validation_days)) {
                 if (!validation_days.matches("[0-9]*")) {
@@ -112,7 +122,7 @@ public class InstallCert extends AdminDocumentHandler {
 
         String subjectAltNames = GenerateCSR.getSubjectAltNames(req.getSubjectAltNames());
 
-        if (certType.equals("self")) {
+        if (!isCommercial) {
             String digest = req.getDigest();
             if (Strings.isNullOrEmpty(digest)) {
                 digest = "sha1";
@@ -132,13 +142,12 @@ public class InstallCert extends AdminDocumentHandler {
             if (subjectAltNames != null && subjectAltNames.length() >0) {
                 cmd.append(" -subjectAltNames \"").append(subjectAltNames).append("\"");
             }
-        } else if (certType.equals("comm")) {
-            deploycrt_cmd.append(" ").append(ZimbraCertMgrExt.UPLOADED_CRT_FILE).append(" ")
-                .append(ZimbraCertMgrExt.UPLOADED_CRT_CHAIN_FILE);
+        } else if (isCommercial) {
+            deploycrt_cmd.append(" ").append(uploadedCertFileName).append(" ").append(uploadedCrtChainFileName);
         }
 
         if (isTargetAllServer) {
-           if (certType.equals("self")) { //self -allserver install - need to pass the subject to the createcrt cmd
+            if (!isCommercial) { // self -allserver install - need to pass the subject to the createcrt cmd
                 if (subject != null && subject.length() > 0) {
                     ZimbraLog.security.debug("Subject for allserver: %s", subject);
                     GenerateCSR.appendSubjectArgToCommand(cmd, subject);
@@ -150,7 +159,7 @@ public class InstallCert extends AdminDocumentHandler {
         }
 
         RemoteResult rr ;
-        if (certType.equals("self")) {
+        if (!isCommercial) {
             ZimbraLog.security.debug("***** Executing the cmd = %s", cmd) ;
             rr = rmgr.execute(cmd.toString());
             //ZimbraLog.security.info("***** Exit Status Code = " + rr.getMExitStatus()) ;
@@ -166,7 +175,7 @@ public class InstallCert extends AdminDocumentHandler {
         rr = rmgr.execute(deploycrt_cmd.toString());
         try {
             OutputParser.parseOuput(rr.getMStdout()) ;
-        }catch (IOException ioe) {
+        } catch (IOException ioe) {
             throw ServiceException.FAILURE("exception occurred handling command", ioe);
         }
 
@@ -174,7 +183,6 @@ public class InstallCert extends AdminDocumentHandler {
         response.addAttribute(AdminConstants.A_SERVER, server.getName());
         return response;
     }
-
 
     private boolean checkUploadedCommCert (InstallCertRequest req, ZimbraSoapContext lc, boolean isAllServer)
     throws ServiceException {
@@ -203,11 +211,10 @@ public class InstallCert extends AdminDocumentHandler {
                 throw ServiceException.FAILURE("Uploaded file " + filename + " with " + attachId + " was not found.",
                         null);
             }
-
             is = up.getInputStream() ;
             byte [] cert = ByteUtil.getContent(is, 1024) ;
-            ZimbraLog.security.debug ("Put the uploaded commercial crt  to " + ZimbraCertMgrExt.UPLOADED_CRT_FILE) ;
-            ByteUtil.putContent(ZimbraCertMgrExt.UPLOADED_CRT_FILE, cert) ;
+            ZimbraLog.security.debug("Put the uploaded commercial crt  to " + uploadedCertFileName);
+            ByteUtil.putContent(uploadedCertFileName, cert);
             is.close();
             completeCertChain.write(cert);
             completeCertChain.write('\n') ;
@@ -261,7 +268,6 @@ public class InstallCert extends AdminDocumentHandler {
             baos.write(rootCA);
             baos.write('\n');
 
-
             byte [] chain = baos.toByteArray() ;
             baos.close();
 
@@ -269,8 +275,8 @@ public class InstallCert extends AdminDocumentHandler {
             completeCertChain.write('\n');
             completeCertChain.close();
 
-            ZimbraLog.security.debug ("Put the uploaded crt chain  to " + ZimbraCertMgrExt.UPLOADED_CRT_CHAIN_FILE) ;
-            ByteUtil.putContent(ZimbraCertMgrExt.UPLOADED_CRT_CHAIN_FILE, chain) ;
+            ZimbraLog.security.debug("Put the uploaded crt chain  to " + uploadedCrtChainFileName);
+            ByteUtil.putContent(uploadedCrtChainFileName, chain);
 
             String privateKey = null;
             if (isAllServer) {
@@ -294,23 +300,19 @@ public class InstallCert extends AdminDocumentHandler {
             }
 
             if (privateKey != null && privateKey.length() > 0) {
-                ZimbraLog.security.debug ("Saving zimbraSSLPrivateKey to  " + ZimbraCertMgrExt.SAVED_COMM_KEY_FROM_LDAP) ;
-            }   else {
+                ZimbraLog.security.debug("Saving zimbraSSLPrivateKey to %s ", savedCommKeyFileName);
+            } else {
                  throw ServiceException.FAILURE("zimbraSSLPrivateKey is not present.", new Exception());
             }
-            ByteUtil.putContent(ZimbraCertMgrExt.SAVED_COMM_KEY_FROM_LDAP, privateKey.getBytes());
+            ByteUtil.putContent(savedCommKeyFileName, privateKey.getBytes());
 
             try {
                 //run zmcertmgr verifycrt to validate the cert and key
-                String cmd = ZimbraCertMgrExt.VERIFY_CRTKEY_CMD + " comm "
-                            //+ " " + ZimbraCertMgrExt.COMM_CRT_KEY_FILE
-                            + " " + ZimbraCertMgrExt.SAVED_COMM_KEY_FROM_LDAP
-                            + " " + ZimbraCertMgrExt.UPLOADED_CRT_FILE ;
+                String cmd = String.format("%s %s %s", ZimbraCertMgrExt.VERIFY_CRTKEY_CMD, savedCommKeyFileName,
+                        uploadedCertFileName);
 
-                String verifychaincmd = ZimbraCertMgrExt.VERIFY_CRTCHAIN_CMD
-                            + " " + ZimbraCertMgrExt.UPLOADED_CRT_CHAIN_FILE
-                            + " " + ZimbraCertMgrExt.UPLOADED_CRT_FILE ;
-
+                String verifychaincmd = String.format("%s %s %s", ZimbraCertMgrExt.VERIFY_CRTCHAIN_CMD,
+                        uploadedCrtChainFileName, uploadedCertFileName);
 
                 ZimbraLog.security.debug("*****  Executing the cmd: " + cmd);
                 RemoteResult rr = rmgr.execute(cmd) ;
@@ -332,13 +334,12 @@ public class InstallCert extends AdminDocumentHandler {
                 if (isAllServer) {
                     prov.modifyAttrs(prov.getConfig(),
                         StringUtil.keyValueArrayToMultiMap(zimbraSSLCertificate, 0), true);
-                }   else {
+                } else {
                     prov.modifyAttrs(server,
                         StringUtil.keyValueArrayToMultiMap(zimbraSSLCertificate, 0), true);
                 }
 
-
-            }catch (IOException ioe) {
+            } catch (IOException ioe) {
                 throw ServiceException.FAILURE("IOException occurred while running cert verification command", ioe);
             }
         } catch (IOException ioe) {
@@ -353,18 +354,16 @@ public class InstallCert extends AdminDocumentHandler {
             }
 
             //delete the key file
-            File comm_priv = new File (ZimbraCertMgrExt.SAVED_COMM_KEY_FROM_LDAP)  ;
-            if (!comm_priv.delete()) {
-                ZimbraLog.security.error ("File " + ZimbraCertMgrExt.SAVED_COMM_KEY_FROM_LDAP + " was not deleted");
+            File comm_priv = new File(savedCommKeyFileName);
+            if (comm_priv.exists() && !comm_priv.delete()) {
+                ZimbraLog.security.error("File %s was not deleted", savedCommKeyFileName);
             }
         }
-
-
         return true ;
     }
 
     @Override
     public void docRights(List<AdminRight> relatedRights, List<String> notes) {
-    	relatedRights.add(Admin.R_installCertificate);
+        relatedRights.add(Admin.R_installCertificate);
     }
 }
