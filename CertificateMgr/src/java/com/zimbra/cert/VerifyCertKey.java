@@ -22,12 +22,14 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Map;
 
+import com.zimbra.common.localconfig.LC;
 import com.zimbra.common.service.ServiceException;
 import com.zimbra.common.soap.CertMgrConstants;
 import com.zimbra.common.soap.Element;
 import com.zimbra.common.util.ByteUtil;
 import com.zimbra.common.util.ZimbraLog;
 import com.zimbra.cs.account.Provisioning;
+import com.zimbra.cs.ldap.LdapUtil;
 import com.zimbra.cs.rmgmt.RemoteManager;
 import com.zimbra.cs.rmgmt.RemoteResult;
 import com.zimbra.cs.service.admin.AdminDocumentHandler;
@@ -41,17 +43,16 @@ public class VerifyCertKey extends AdminDocumentHandler {
 
     @Override
     public Element handle(Element request, Map<String, Object> context) throws ServiceException {
-   		ZimbraSoapContext lc = getZimbraSoapContext(context);
-   		prov = Provisioning.getInstance();
-   		String certBuffer = request.getAttribute(CertMgrConstants.E_cert) ;
-   		String prvkeyBuffer = request.getAttribute(CertMgrConstants.A_privkey) ;
-   		Element response = lc.createElement(CertMgrConstants.VERIFY_CERTKEY_RESPONSE);
+        ZimbraSoapContext lc = getZimbraSoapContext(context);
+        prov = Provisioning.getInstance();
+        String certBuffer = request.getAttribute(CertMgrConstants.E_cert);
+        String prvkeyBuffer = request.getAttribute(CertMgrConstants.A_privkey);
+        Element response = lc.createElement(CertMgrConstants.VERIFY_CERTKEY_RESPONSE);
 
-		String timeStamp = getCurrentTimeStamp();
-		String storedPath = ZimbraCertMgrExt.COMM_CRT_KEY_DIR + "." + timeStamp + "/";
-		String keyFile = storedPath + ZimbraCertMgrExt.COMM_CRT_KEY_FILE_NAME;
-		String certFile = storedPath + ZimbraCertMgrExt.COMM_CRT_FILE_NAME;
-		String caFile = storedPath + ZimbraCertMgrExt.COMM_CRT_CA_FILE_NAME;
+        String storedPath = LC.zimbra_tmp_directory.value() + File.separator + LdapUtil.generateUUID() + File.separator;
+        String keyFile = storedPath + ZimbraCertMgrExt.COMM_CRT_KEY_FILE_NAME;
+        String certFile = storedPath + ZimbraCertMgrExt.COMM_CRT_FILE_NAME;
+        String caFile = storedPath + ZimbraCertMgrExt.COMM_CRT_CA_FILE_NAME;
 
 		try {
    			if(certBuffer == null) {
@@ -81,18 +82,15 @@ public class VerifyCertKey extends AdminDocumentHandler {
             File comm_path = new File(storedPath);
             if (!comm_path.exists()) {
                 if (!comm_path.mkdirs()) {
-                    throw ServiceException.FAILURE("IOException, can't " +
-                            "create dir " + comm_path.getAbsolutePath().toString()
-                            , null);
+                    throw ServiceException.FAILURE("Cannot create dir " + comm_path.getAbsolutePath().toString(), null);
                 }
             } else if (!comm_path.isDirectory()) {
-                throw ServiceException
-                        .FAILURE("IOException occurred: Now exist directory '"
-                                + ZimbraCertMgrExt.COMM_CRT_KEY_DIR + "'", null);
+                throw ServiceException.FAILURE("Path is not a directory: " + comm_path.getAbsolutePath().toString(),
+                        null);
             }
 			ByteUtil.putContent(certFile, certByte);
 			ByteUtil.putContent(caFile, certByte);
-			
+
 			byte [] prvkeyByte = prvkeyBuffer_t.getBytes();
 			ByteUtil.putContent(keyFile, prvkeyByte) ;
 		
