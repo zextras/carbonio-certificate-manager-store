@@ -7,7 +7,6 @@
 	</condition>
 
 	<property name="jar.file" value="com_zimbra_cert_manager-${project.maven.version}.jar" />
-	<property name="src.zimlet.dir" location="${src.dir}/zimlet" />
 	<property name="build.zimlet.dir" location="${build.dir}/zimlet" />
 	<property name="ext.deploy.dir" location="${zimbra.home.dir}/lib/ext/com_zimbra_cert_manager"/>
 
@@ -47,7 +46,7 @@
 	<target name="package-zimlet" description="put zimlet files into zip archive for deployment">
 		<mkdir dir="${build.zimlet.dir}" />
 		<zip destfile="${build.zimlet.dir}/com_zimbra_cert_manager.zip" update="true">
-			<fileset dir="${src.zimlet.dir}" includes="*"/>
+			<fileset dir="js" includes="*"/>
 		</zip>
 	</target>
 	<target name="deploy-zimlet" depends='package-zimlet' description="install UI files, deploy zimlet to LDAP">

@@ -17,39 +17,51 @@
 package com.zimbra.cert;
 
 import com.zimbra.common.service.ServiceException;
+import com.zimbra.common.util.ZimbraLog;
+import com.zimbra.cs.extension.ExtensionDispatcherServlet;
 import com.zimbra.cs.extension.ZimbraExtension;
+import com.zimbra.qa.unittest.TestCertManager;
+import com.zimbra.qa.unittest.TestDownloadCSR;
+import com.zimbra.qa.unittest.ZimbraSuite;
 import com.zimbra.soap.SoapServlet;
 
 
 public class ZimbraCertMgrExt implements ZimbraExtension {
     public static final String EXTENSION_NAME_CERTMGR = "com_zimbra_cert_manager";
-    
+
     //Remote commands
-    public static final String GET_STAGED_CERT_CMD = "zmcertmgr viewstagedcrt" ;
-    public static final String GET_DEPLOYED_CERT_CMD = "zmcertmgr viewdeployedcrt" ;
-    public static final String CREATE_CSR_CMD = "zmcertmgr createcsr" ;
-    public static final String CREATE_CRT_CMD = "zmcertmgr createcrt"   ;
-    public static final String DEPLOY_CERT_CMD = "zmcertmgr deploycrt" ;
-    public static final String GET_CSR_CMD = "zmcertmgr viewcsr" ;
-    public static final String VERIFY_CRTKEY_CMD = "zmcertmgr verifycrtkey" ;
-    public static final String VERIFY_COMM_CRTKEY_CMD = "zmcertmgr verifycrt" ;
-    public static final String VERIFY_CRTCHAIN_CMD = "zmcertmgr verifycrtchain" ;
-    // put vefified certificate and key to tempoaray dir
+    public static final String GET_STAGED_CERT_CMD = "zmcertmgr viewstagedcrt";
+    public static final String GET_DEPLOYED_CERT_CMD = "zmcertmgr viewdeployedcrt";
+    public static final String CREATE_CSR_CMD = "zmcertmgr createcsr";
+    public static final String CREATE_CRT_CMD = "zmcertmgr createcrt";
+    public static final String DEPLOY_CERT_CMD = "zmcertmgr deploycrt";
+    public static final String GET_CSR_CMD = "zmcertmgr viewcsr";
+    public static final String VERIFY_CRTKEY_CMD = "zmcertmgr verifycrtkey";
+    public static final String VERIFY_COMM_CRTKEY_CMD = "zmcertmgr verifycrt";
+    public static final String VERIFY_CRTCHAIN_CMD = "zmcertmgr verifycrtchain";
     public static final String COMM_CRT_KEY_FILE_NAME = "commercial.key";
     public static final String COMM_CRT_FILE_NAME = "commercial.crt";
     public static final String COMM_CRT_CA_FILE_NAME = "commercial_ca.crt";
+    public static final String ALL_SERVERS = "--- All Servers ---";
+    public final static String CERT_TYPE_SELF = "self";
+    public final static String CERT_TYPE_COMM = "comm";
 
-    public static final String ALL_SERVERS = "--- All Servers ---" ;
-    public static final String A_zimbraSSLPrivateKey = "zimbraSSLPrivateKey" ;
-    public static final String A_zimbraSSLCertificate = "zimbraSSLCertificate" ;
     public void destroy() {
     }
 
     public String getName() {
-        return EXTENSION_NAME_CERTMGR ;
+        return EXTENSION_NAME_CERTMGR;
     }
 
     public void init() throws ServiceException {
+        try {
+            ZimbraSuite.addTest(TestCertManager.class);
+            ZimbraSuite.addTest(TestDownloadCSR.class);
+        } catch (NoClassDefFoundError e) {
+            // Expected in production, because JUnit is not available.
+            ZimbraLog.test.debug("Unable to load ZimbraCertMgrExt unit tests.", e);
+        }
         SoapServlet.addService("AdminServlet", new ZimbraCertMgrService());
+        ExtensionDispatcherServlet.register(this, new DownloadCSRHandler());
     }
 }
