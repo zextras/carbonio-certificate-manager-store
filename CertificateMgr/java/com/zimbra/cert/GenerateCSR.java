@@ -19,6 +19,8 @@ package com.zimbra.cert;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.commons.lang.StringEscapeUtils;
+
 import com.google.common.base.Strings;
 import com.google.common.net.HostSpecifier;
 import com.zimbra.common.account.Key.ServerBy;
@@ -40,8 +42,6 @@ import com.zimbra.soap.admin.message.GenCSRRequest;
 import com.zimbra.soap.base.CertSubjectAttrs;
 
 public class GenerateCSR extends AdminDocumentHandler {
-    private final static String CSR_TYPE_SELF = "self" ;
-    private final static String CSR_TYPE_COMM = "comm" ;
 
     @Override
     public Element handle(Element request, Map<String, Object> context) throws ServiceException {
@@ -65,38 +65,48 @@ public class GenerateCSR extends AdminDocumentHandler {
         ZimbraLog.security.debug("Generate the CSR info from server: %s", server.getName()) ;
 
         StringBuilder cmd = new StringBuilder(ZimbraCertMgrExt.CREATE_CSR_CMD);
-        String keysize = req.getKeySize();
-        if (!"1024".equals(keysize)) {
-            keysize = "2048";
-        }
         if ("1".equals(req.getNewCSR())) {
+            String keysize = req.getKeySize();
             String type = req.getType();
             if (Strings.isNullOrEmpty(type)) {
                 throw ServiceException.INVALID_REQUEST("No valid CSR type is set.", null);
-            } else if (type.equals(CSR_TYPE_SELF) || type.equals(CSR_TYPE_COMM)) {
+            } else if (type.equals(ZimbraCertMgrExt.CERT_TYPE_SELF) || type.equals(ZimbraCertMgrExt.CERT_TYPE_COMM)) {
                 cmd.append(" ").append(type);
             } else {
-                throw ServiceException.INVALID_REQUEST("Invalid CSR type: '" + type +"'. Must be (self|comm).", null);
+                throw ServiceException.INVALID_REQUEST(String.format("Invalid CSR type: '%s'. Must be '%s' or '%s' ",
+                        type, ZimbraCertMgrExt.CERT_TYPE_SELF, ZimbraCertMgrExt.CERT_TYPE_COMM), null);
             }
-
+            if (keysize != null && !keysize.isEmpty()) {
+                try {
+                    int iKeySize = Integer.parseInt(keysize);
+                    if (iKeySize < 2048) {
+                        throw ServiceException.INVALID_REQUEST("Minimum allowed key size is 2048", null);
+                    }
+                    cmd.append(" -new -keysize ").append(keysize);
+                } catch (NumberFormatException nfe) {
+                    throw ServiceException.INVALID_REQUEST("Invalid value for parameter " + CertMgrConstants.E_KEYSIZE,
+                            nfe);
+                }
+            }
             String digest = req.getDigest();
-            if (Strings.isNullOrEmpty(digest)) {
-                digest = "sha1";
-            } else if (!digest.matches("[a-zA-Z0-9]*")) {
-                throw ServiceException.INVALID_REQUEST(String.format("digest '%s' is not valid.", digest), null);
+            if (digest != null && !digest.isEmpty()) {
+                if (!digest.matches("[a-zA-Z0-9]*")) {
+                    throw ServiceException.INVALID_REQUEST(String.format("digest '%s' is not valid.", digest), null);
+                }
+                cmd.append(" -digest ").append(digest);
             }
-            cmd.append(" -new -keysize ").append(keysize).append(" -digest ").append(digest);
             appendSubjectArgToCommand(cmd, getSubject(req));
 
             String subjectAltNames = getSubjectAltNames(req.getSubjectAltNames()) ;
             if (!Strings.isNullOrEmpty(subjectAltNames)) {
-                cmd.append(" -subjectAltNames \"").append(subjectAltNames).append("\"");
+                cmd.append(" -subjectAltNames '").append(StringEscapeUtils.escapeJavaScript(subjectAltNames))
+                        .append("'");
             }
             RemoteManager rmgr = RemoteManager.getRemoteManager(server);
             ZimbraLog.security.debug("***** Executing the cmd = %s", cmd);
             RemoteResult rr = rmgr.execute(cmd.toString());
             OutputParser.logOutput(rr.getMStdout()) ;
-        }else{
+        } else {
             ZimbraLog.security.info("No new CSR need to be created.");
         }
 
@@ -111,7 +121,7 @@ public class GenerateCSR extends AdminDocumentHandler {
             return cmd;
         }
 
-        cmd.append(" -subject \"").append(subject.replace("\"", "\\\"")).append("\"");
+        cmd.append(" -subject '").append(StringEscapeUtils.escapeJavaScript(subject)).append("'");
         return cmd;
     }
 
