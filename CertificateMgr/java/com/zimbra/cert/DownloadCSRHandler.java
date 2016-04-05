@@ -1,11 +1,13 @@
 package com.zimbra.cert;
 
 import java.io.BufferedInputStream;
+import java.io.ByteArrayInputStream;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.nio.charset.Charset;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
@@ -29,6 +31,8 @@ import com.zimbra.cs.account.Provisioning;
 import com.zimbra.cs.account.Server;
 import com.zimbra.cs.account.accesscontrol.Rights.Admin;
 import com.zimbra.cs.extension.ExtensionHttpHandler;
+import com.zimbra.cs.rmgmt.RemoteManager;
+import com.zimbra.cs.rmgmt.RemoteResult;
 import com.zimbra.cs.servlet.ZimbraServlet;
 
 public class DownloadCSRHandler extends ExtensionHttpHandler {
@@ -60,10 +64,12 @@ public class DownloadCSRHandler extends ExtensionHttpHandler {
                 checkRight(authToken, server, Admin.R_getCSR);
                 if (server.isLocalServer()) {
                     // send CSR file
-                    getCSRFile(resp.getOutputStream(), resp);
-                } else {
+                    getCSRFile(resp);
+                } else if (server.hasMailClientService()) {
                     // forward request to target server
                     proxyRequestWithAuth(authToken, server, resp);
+                } else {
+                    downloadViaRemoteMgr(server, resp);
                 }
             } catch (ServiceException e) {
                 ZimbraLog.extensions.error("Admin user %s does not have permission %s to download CSR from server %s",
@@ -77,15 +83,12 @@ public class DownloadCSRHandler extends ExtensionHttpHandler {
         }
     }
 
-    private static void getCSRFile(OutputStream out, HttpServletResponse resp) throws FileNotFoundException,
+    private static void getCSRFile(HttpServletResponse resp) throws FileNotFoundException,
             IOException {
-        resp.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
-        resp.setHeader("Pragma", "no-cache");
-        resp.setHeader("Expires", "0");
-        resp.setContentType("application/x-download");
-        resp.setHeader("Content-Disposition", "attachment; filename=commercial.csr");
+        setRespHeaders(resp);
         InputStream in = null;
         try {
+            OutputStream out = resp.getOutputStream();
             in = new BufferedInputStream(new FileInputStream(CSR_FILE_NAME));
             byte[] buf = new byte[1024];
             int bytesRead;
@@ -103,10 +106,12 @@ public class DownloadCSRHandler extends ExtensionHttpHandler {
             throws ServiceException, HttpException, IOException {
         HttpClient client = ZimbraHttpConnectionManager.getInternalHttpConnMgr().getDefaultHttpClient();
         HttpState state = HttpClientUtil.newHttpState(authToken.toZAuthToken(), server.getServiceHostname(), true);
-        GetMethod method = new GetMethod(String.format("https://%s:%s/service/extension/%s/%s",
+        String destURL = String.format("https://%s:%s/service/extension/%s/%s",
                 server.getServiceHostname(), server.getAdminPortAsString(), ZimbraCertMgrExt.EXTENSION_NAME_CERTMGR,
-                HANDLER_PATH_NAME));
+ HANDLER_PATH_NAME);
+        GetMethod method = new GetMethod(destURL);
         client.setState(state);
+        ZimbraLog.extensions.debug("Proxying CSR download request to %s", destURL);
         int status = client.executeMethod(method);
         InputStream responseBody = method.getResponseBodyAsStream();
         resp.setStatus(status);
@@ -115,6 +120,34 @@ public class DownloadCSRHandler extends ExtensionHttpHandler {
         }
         if (responseBody != null) {
             ByteUtil.copy(responseBody, true, resp.getOutputStream(), true);
+        }
+    }
+
+    private static void setRespHeaders(HttpServletResponse resp) {
+        resp.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
+        resp.setHeader("Pragma", "no-cache");
+        resp.setHeader("Expires", "0");
+        resp.setContentType("application/x-download");
+        resp.setHeader("Content-Disposition", "attachment; filename=commercial.csr");
+    }
+
+    private static void downloadViaRemoteMgr(Server server, HttpServletResponse resp)
+            throws ServiceException, IOException {
+        RemoteManager rmgr = RemoteManager.getRemoteManager(server);
+        ZimbraLog.security.debug("***** Executing the cmd = %s", ZimbraCertMgrExt.DOWNLOAD_CSR_CMD);
+        RemoteResult rr = null;
+        rr = rmgr.execute(ZimbraCertMgrExt.DOWNLOAD_CSR_CMD);
+        if (rr.getMExitStatus() == 0) {
+            byte[] content = rr.getMStdout();
+            setRespHeaders(resp);
+            ByteUtil.copy(new ByteArrayInputStream(OutputParser.cleanCSROutput(content).getBytes()), true,
+                    resp.getOutputStream(), true);
+        } else {
+            String stderr = (rr.getMStderr() != null) ? new String(rr.getMStderr(), Charset.forName("UTF-8")) : null;
+            String errmsg = String.format("Command \"%s\" failed; exit code=%d; stderr=\n%s",
+                    ZimbraCertMgrExt.DOWNLOAD_CSR_CMD, rr.getMExitStatus(), stderr);
+            ZimbraLog.security.error(errmsg);
+            throw ServiceException.FAILURE(errmsg, null);
         }
     }
 

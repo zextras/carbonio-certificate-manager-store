@@ -39,6 +39,7 @@ public class ZimbraCertMgrExt implements ZimbraExtension {
     public static final String VERIFY_CRTKEY_CMD = "zmcertmgr verifycrtkey";
     public static final String VERIFY_COMM_CRTKEY_CMD = "zmcertmgr verifycrt";
     public static final String VERIFY_CRTCHAIN_CMD = "zmcertmgr verifycrtchain";
+    public static final String DOWNLOAD_CSR_CMD = "downloadcsr";
     public static final String COMM_CRT_KEY_FILE_NAME = "commercial.key";
     public static final String COMM_CRT_FILE_NAME = "commercial.crt";
     public static final String COMM_CRT_CA_FILE_NAME = "commercial_ca.crt";

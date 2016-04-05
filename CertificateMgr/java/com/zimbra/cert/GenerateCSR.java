@@ -16,6 +16,7 @@
  */
 package com.zimbra.cert;
 
+import java.nio.charset.Charset;
 import java.util.List;
 import java.util.Map;
 
@@ -105,7 +106,17 @@ public class GenerateCSR extends AdminDocumentHandler {
             RemoteManager rmgr = RemoteManager.getRemoteManager(server);
             ZimbraLog.security.debug("***** Executing the cmd = %s", cmd);
             RemoteResult rr = rmgr.execute(cmd.toString());
-            OutputParser.logOutput(rr.getMStdout()) ;
+            Charset csutf8 = Charset.forName("UTF-8");
+            String stdout = (rr.getMStdout() != null) ? new String(rr.getMStdout(), csutf8) : null;
+            String stderr = (rr.getMStderr() != null) ? new String(rr.getMStderr(), csutf8) : null;
+            if (rr.getMExitStatus() != 0) {
+                String errmsg = String.format("Command \"%s\" failed; exit code=%d; stderr=\n%s", cmd,
+                        rr.getMExitStatus(), stderr);
+                ZimbraLog.security.error(errmsg);
+                throw ServiceException.FAILURE(errmsg, null);
+            } else {
+                ZimbraLog.security.debug(stdout);
+            }
         } else {
             ZimbraLog.security.info("No new CSR need to be created.");
         }
@@ -120,14 +131,13 @@ public class GenerateCSR extends AdminDocumentHandler {
         if (Strings.isNullOrEmpty(subject)) {
             return cmd;
         }
-
-        cmd.append(" -subject '").append(StringEscapeUtils.escapeJavaScript(subject)).append("'");
+        cmd.append(" -subject '").append(subject).append("'");
         return cmd;
     }
 
     private static void appendToSubject(StringBuilder subject, String attrName, String attrValue) {
         if (!Strings.isNullOrEmpty(attrValue)) {
-            subject.append("/").append(attrName).append("=").append(attrValue.replace("/", "\\/"));
+            subject.append("/").append(attrName).append("=").append(StringEscapeUtils.escapeJavaScript(attrValue));
         }
     }
 

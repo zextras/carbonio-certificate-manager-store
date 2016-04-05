@@ -64,6 +64,23 @@ public class OutputParser {
         return hash;
     }
 
+    // parse the output of the zmcertmgr cmd
+    public static String cleanCSROutput(byte[] in) throws IOException, ServiceException {
+        BufferedReader br = new BufferedReader(new InputStreamReader(new ByteArrayInputStream(in)));
+        String line;
+        StringBuilder csrContent = new StringBuilder();
+        while ((line = br.readLine()) != null) {
+            if (line.startsWith("STARTCMD:") || line.startsWith("ENDCMD:")) {
+                continue;
+            } else if (line.startsWith(ERROR_PREFIX)) {
+                throw ServiceException.FAILURE(line, null);
+            } else {
+                csrContent.append(line).append("\n");
+            }
+        }
+        return csrContent.toString();
+    }
+
     // Example:
     // subject=/C=US/ST=CA/L=San Mateo/O=Zimbra/OU=Zimbra Collaboration Suite/CN=admindev.zimbra.com
 
@@ -108,19 +125,6 @@ public class OutputParser {
          * = matcher.group(1); //ZimbraLog.security.info("Host " + i + " = " + value); vec.add(value); } }
          */
         return vec;
-    }
-
-    public static void logOutput(byte[] in) {
-        try {
-            BufferedReader br = new BufferedReader(new InputStreamReader(new ByteArrayInputStream(in)));
-            String line;
-            while ((line = br.readLine()) != null) {
-                ZimbraLog.security.debug(line);
-            }
-        } catch (IOException e) {
-            ZimbraLog.security.error(e);
-        }
-
     }
 
     // parse verification result
