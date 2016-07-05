@@ -4,16 +4,15 @@
 
   <property file="build.properties"/>
 
-  <property name="zimlet.name" value="com_zimbra_cert_manager" />
-  <property name="jar.file" value="${zimlet.name}.jar" />
+  <property name="ext.name" value="com_zimbra_cert_manager" />
+  <property name="jar.file" value="${ext.name}.jar" />
 
   <!-- dist -->
   <property name="dist.lib.dir" location="${dist.dir}/lib"/>
   <property name="dist.lib.ext.dir" location="${dist.lib.dir}/ext"/>
 
   <!-- deploy -->
-  <property name="zimbra.home.dir" location="/opt/zimbra"/>
-  <property name="jar.deploy.dir" location="${zimbra.home.dir}/lib/ext/${zimlet.name}"/>
+  <property name="jar.deploy.dir" location="${zimbra.home.dir}/lib/ext/${ext.name}"/>
 
   <target name="build-init">
     <mkdir dir="${build.classes.dir}"/>
