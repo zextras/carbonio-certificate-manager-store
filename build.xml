@@ -1,4 +1,4 @@
-<project name="zm-certificate-manager-store" default="jar">
+<project name="zm-certificate-manager-store" default="jar" xmlns:ivy="antlib:org.apache.ivy.ant">
 
   <import file="../zm-zcs/ant-global.xml"/>
 
@@ -18,23 +18,6 @@
     <mkdir dir="${build.classes.dir}"/>
     <mkdir dir="${dist.lib.ext.dir}"/>
   </target>
-
-  <path id="class.path">
-    <fileset dir="${common.jars.dir}">
-      <include name="**/zimbrastore.jar" />
-      <include name="**/zimbracommon.jar" />
-      <include name="**/zimbrasoap.jar" />
-      <include name="**/zimbraclient.jar" />
-      <include name="**/commons-client-*.jar" />
-      <include name="**/commons-httpclient-*.jar" />
-      <include name="**/commons-io-*.jar" />
-      <include name="**/commons-lang-*.jar" />
-      <include name="**/servlet-api-*.jar" />
-      <include name="**/guava-*.jar" />
-      <include name="**/dom4j-*.jar" />
-      <include name="**/junit-*.jar" />
-    </fileset>
-  </path>
 
   <target name="jar" depends="build-init,compile" description="Creates the jar file">
     <antcall target="zimbra-jar">
