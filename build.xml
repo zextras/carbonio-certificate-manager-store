@@ -5,7 +5,6 @@
   <property file="build.properties"/>
 
   <property name="ext.name" value="com_zimbra_cert_manager" />
-  <property name="jar.file" value="${ext.name}.jar" />
 
   <!-- dist -->
   <property name="dist.lib.dir" location="${dist.dir}/lib"/>
@@ -41,9 +40,12 @@
     <antcall target="start-webserver"/>
   </target>
 
-  <!-- Currently broken - start-webserver/stop-webserver not present in zm-store build.xml
-       Perhaps would be better to use zmcontrol start/stop?
-    -->
+  <target name="undeploy" depends="jar" description="undeploy certificate manager jar">
+    <antcall target="stop-webserver"/>
+    <delete dir="${jar.deploy.dir}"/>
+    <antcall target="start-webserver"/>
+  </target>
+
   <target name="start-webserver">
     <ant dir="${server.dir}" target="start-webserver" inheritAll="false"/>
   </target>

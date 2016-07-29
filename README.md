@@ -10,4 +10,4 @@ TODO
 
 ## Artifacts
 
-- `com_zimbra_cert_manager.jar`
+- `zm-certificate-manager-store.jar`
