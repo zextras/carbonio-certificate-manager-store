@@ -10,11 +10,12 @@ import java.util.Map;
 
 import junit.framework.TestCase;
 
-import org.apache.commons.httpclient.HttpClient;
-import org.apache.commons.httpclient.HttpState;
-import org.apache.commons.httpclient.HttpStatus;
-import org.apache.commons.httpclient.cookie.CookiePolicy;
-import org.apache.commons.httpclient.methods.GetMethod;
+import org.apache.http.HttpResponse;
+import org.apache.http.HttpStatus;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.impl.client.BasicCookieStore;
+import org.apache.http.impl.client.HttpClientBuilder;
+import org.apache.http.impl.cookie.BasicClientCookie;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -54,14 +55,14 @@ public class TestDownloadCSR extends TestCase {
     @Test
     public void testDownloadLocalCSRSuperAdmin() throws Exception {
         AuthToken at = AuthProvider.getAdminAuthToken();
-        HttpClient client = ZimbraHttpConnectionManager.getInternalHttpConnMgr().newHttpClient();
-        HttpState state = new HttpState();
-        at.encode(state, true, Provisioning.getInstance().getLocalServer().getName());
-        client.setState(state);
-        GetMethod get = new GetMethod(getDownloadURL());
-        int statusCode = HttpClientUtil.executeMethod(client, get);
-        assertEquals("The GET request should succeed. Getting status code " + statusCode, HttpStatus.SC_OK, statusCode);
-        String downloadedContent = get.getResponseBodyAsString();
+        HttpClientBuilder httpClientBuilder = ZimbraHttpConnectionManager.getInternalHttpConnMgr().newHttpClient();
+        BasicCookieStore cookieStore = new BasicCookieStore();
+        at.encode(cookieStore, true, Provisioning.getInstance().getLocalServer().getName());
+        httpClientBuilder.setDefaultCookieStore(cookieStore);
+        HttpGet get = new HttpGet(getDownloadURL());
+        HttpResponse httpResponse = HttpClientUtil.executeMethod(httpClientBuilder.build(), get);
+        assertEquals("The GET request should succeed. Getting status code " + httpResponse.getStatusLine().getStatusCode(), HttpStatus.SC_OK, httpResponse.getStatusLine().getStatusCode());
+        String downloadedContent = new String(ByteUtil.getContent(httpResponse.getEntity().getContent(), -1));
         assertNotNull("downloaded empty content", downloadedContent);
         assertTrue("downloaded content is not the same as CSR file on disk", downloadedContent.equals(csrContent));
     }
@@ -74,17 +75,13 @@ public class TestDownloadCSR extends TestCase {
         insufficientRights.add(Admin.R_listDomain);
         insufficientRights.add(Admin.R_installCertificate);
         String authToken = getDelegatedAdminAuthToken(insufficientRights);
-        HttpClient client = ZimbraHttpConnectionManager.getInternalHttpConnMgr().newHttpClient();
-        HttpState state = new HttpState();
-        state.addCookie(new org.apache.commons.httpclient.Cookie(Provisioning.getInstance().getLocalServer().getName(),
-                ZimbraCookie.authTokenCookieName(true),
-                authToken, "/", null, false));
-        client.getParams().setCookiePolicy(CookiePolicy.BROWSER_COMPATIBILITY);
-        client.setState(state);
-        GetMethod get = new GetMethod(getDownloadURL());
-        int statusCode = HttpClientUtil.executeMethod(client, get);
-        assertEquals("The GET request should succeed. Getting status code " + statusCode, HttpStatus.SC_UNAUTHORIZED,
-                statusCode);
+        HttpClientBuilder httpClientBuilder = ZimbraHttpConnectionManager.getInternalHttpConnMgr().newHttpClient();
+        BasicCookieStore state = new BasicCookieStore();
+        state.addCookie(new BasicClientCookie(ZimbraCookie.authTokenCookieName(true),authToken));
+        httpClientBuilder.setDefaultCookieStore(state);
+        HttpGet get = new HttpGet(getDownloadURL());
+        HttpResponse httpResponse = HttpClientUtil.executeMethod(httpClientBuilder.build(), get);
+        assertEquals("The GET request should succeed. Getting status code " + httpResponse.getStatusLine().getStatusCode(), HttpStatus.SC_UNAUTHORIZED, httpResponse.getStatusLine().getStatusCode());
     }
 
     @Test
@@ -92,18 +89,15 @@ public class TestDownloadCSR extends TestCase {
         List<AdminRight> sufficientRights = new ArrayList<AdminRight>();
         sufficientRights.add(Admin.R_getCSR);
         String authToken = getDelegatedAdminAuthToken(sufficientRights);
-        HttpClient client = ZimbraHttpConnectionManager.getInternalHttpConnMgr().newHttpClient();
-        HttpState state = new HttpState();
-        state.addCookie(new org.apache.commons.httpclient.Cookie(Provisioning.getInstance().getLocalServer().getName(),
-                ZimbraCookie.authTokenCookieName(true),
-                authToken, "/", null, false));
-        client.getParams().setCookiePolicy(CookiePolicy.BROWSER_COMPATIBILITY);
-        client.setState(state);
-        GetMethod get = new GetMethod(getDownloadURL());
-        int statusCode = HttpClientUtil.executeMethod(client, get);
-        assertEquals("The GET request should succeed. Getting status code " + statusCode, HttpStatus.SC_OK,
-                statusCode);
-        String downloadedContent = get.getResponseBodyAsString();
+        HttpClientBuilder httpClientBuilder = ZimbraHttpConnectionManager.getInternalHttpConnMgr().newHttpClient();
+        BasicCookieStore state = new BasicCookieStore();
+        state.addCookie(new BasicClientCookie(ZimbraCookie.authTokenCookieName(true),authToken));
+        httpClientBuilder.setDefaultCookieStore(state);
+        HttpGet get = new HttpGet(getDownloadURL());
+        HttpResponse httpResponse = HttpClientUtil.executeMethod(httpClientBuilder.build(), get);
+        assertEquals("The GET request should succeed. Getting status code " + httpResponse, HttpStatus.SC_OK,
+                httpResponse);
+        String downloadedContent = new String(ByteUtil.getContent(httpResponse.getEntity().getContent(), -1));
         assertNotNull("downloaded empty content", downloadedContent);
         assertTrue("downloaded content is not the same as CSR file on disk", downloadedContent.equals(csrContent));
     }
