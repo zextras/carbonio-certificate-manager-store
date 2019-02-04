@@ -2,11 +2,11 @@
  * ***** BEGIN LICENSE BLOCK *****
  * Zimbra Collaboration Suite Server
  * Copyright (C) 2007, 2008, 2009, 2010, 2011, 2013, 2014, 2016 Synacor, Inc.
- * 
+ *
  * This program is free software: you can redistribute it and/or modify it under
  * the terms of the GNU General Public License as published by the Free Software Foundation,
  * version 2 of the License.
- * 
+ *
  * This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
  * without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
  * See the GNU General Public License for more details.
@@ -30,8 +30,10 @@ import java.security.PublicKey;
 import java.security.UnrecoverableKeyException;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
+import java.util.Base64;
+import java.util.Base64.Encoder;
 
-import sun.misc.BASE64Encoder;
+
 
 public class MyExportPrivKey {
         private File keystoreFile;
@@ -57,12 +59,12 @@ public class MyExportPrivKey {
 
         public void export() throws IOException, KeyStoreException, NoSuchAlgorithmException, CertificateException {
             KeyStore keystore=KeyStore.getInstance(keyStoreType);
-            BASE64Encoder encoder=new BASE64Encoder();
+            Encoder encoder=Base64.getEncoder();
             FileInputStream input = new FileInputStream(keystoreFile);
             keystore.load(input,password);
             KeyPair keyPair=getPrivateKey(keystore,alias,password);
             PrivateKey privateKey=keyPair.getPrivate();
-            String encoded=encoder.encode(privateKey.getEncoded());
+            String encoded= new String(encoder.encode(privateKey.getEncoded()));
             FileWriter fw=new FileWriter(exportedFile);
             fw.write("-----BEGIN PRIVATE KEY-----\n");
             fw.write(encoded);
@@ -80,7 +82,7 @@ public class MyExportPrivKey {
          * to convert it to the format of zimbra server.key (it is also apache modssl expects)
          * @param args
          * @throws Exception
-         * 
+         *
          */
         public static void main(String args[]) throws Exception{
                MyExportPrivKey export=new MyExportPrivKey();
