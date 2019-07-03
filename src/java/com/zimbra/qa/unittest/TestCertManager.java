@@ -13,17 +13,20 @@ import javax.servlet.http.HttpServletResponse;
 
 import junit.framework.TestCase;
 
-import org.apache.commons.httpclient.HttpClient;
-import org.apache.commons.httpclient.HttpState;
-import org.apache.commons.httpclient.cookie.CookiePolicy;
-import org.apache.commons.httpclient.methods.PostMethod;
 import org.apache.commons.io.FileUtils;
+import org.apache.http.HttpException;
+import org.apache.http.HttpResponse;
+import org.apache.http.client.entity.EntityBuilder;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.impl.client.BasicCookieStore;
+import org.apache.http.impl.client.HttpClientBuilder;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
 import com.zimbra.cert.ZimbraCertMgrExt;
 import com.zimbra.client.ZMailbox;
+import com.zimbra.common.auth.ZAuthToken;
 import com.zimbra.common.httpclient.HttpClientUtil;
 import com.zimbra.common.localconfig.LC;
 import com.zimbra.common.service.ServiceException;
@@ -31,8 +34,8 @@ import com.zimbra.common.soap.Element;
 import com.zimbra.common.soap.SoapFaultException;
 import com.zimbra.common.soap.SoapHttpTransport;
 import com.zimbra.common.soap.SoapProtocol;
+import com.zimbra.common.util.ByteUtil;
 import com.zimbra.common.util.Constants;
-import com.zimbra.common.util.ZimbraCookie;
 import com.zimbra.common.util.ZimbraHttpConnectionManager;
 import com.zimbra.common.util.ZimbraLog;
 import com.zimbra.common.zclient.ZClientException;
@@ -233,24 +236,23 @@ public class TestCertManager extends TestCase {
             contentType += "; name=" + fileName;
         }
 
-        HttpClient client = ZimbraHttpConnectionManager.getInternalHttpConnMgr().newHttpClient();
-        HttpState state = new HttpState();
-        state.addCookie(new org.apache.commons.httpclient.Cookie("localhost", ZimbraCookie.authTokenCookieName(true),
-                authToken, "/", null, false));
-        client.getParams().setCookiePolicy(CookiePolicy.BROWSER_COMPATIBILITY);
-        client.setState(state);
-        PostMethod post = new PostMethod(Url);
-        int statusCode;
+        HttpClientBuilder httpClientBuilder = ZimbraHttpConnectionManager.getInternalHttpConnMgr().newHttpClient();
+        BasicCookieStore cookieStore = HttpClientUtil.newHttpState(new ZAuthToken(authToken), "localhost", true);
+        httpClientBuilder.setDefaultCookieStore(cookieStore);
+
+        HttpPost post = new HttpPost(Url);
+        HttpResponse httpResponse;
         try {
-            post = HttpClientUtil.addInputStreamToHttpMethod(post, in, contentLength, contentType);
-            post.addRequestHeader(Constants.CSRF_TOKEN, csrfToken);
-            statusCode = HttpClientUtil.executeMethod(client, post);
-            assertEquals("getting non 200 response from upload servlet", HttpServletResponse.SC_OK, statusCode);
-            String response = post.getResponseBodyAsString();
+            post.addHeader("Content-Type", contentType);
+            post.addHeader(Constants.CSRF_TOKEN, csrfToken);
+            post.setEntity(EntityBuilder.create().setStream(in).build());
+            httpResponse = HttpClientUtil.executeMethod(httpClientBuilder.build(), post);
+            assertEquals("getting non 200 response from upload servlet", HttpServletResponse.SC_OK, httpResponse);
+            String response = new String(ByteUtil.getContent(httpResponse.getEntity().getContent(), -1));
 
             aid = ZMailbox.getAttachmentId(response);
             assertNotNull("attachment ID should not be null " + response, aid);
-        } catch (IOException e) {
+        } catch (IOException | HttpException e) {
             throw ZClientException.IO_ERROR(e.getMessage(), e);
         } finally {
             post.releaseConnection();
