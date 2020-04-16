@@ -6,8 +6,8 @@
  <dependencies>
   <dependency org="junit" name="junit" rev="4.8.2" />
   <dependency org="javax.servlet" name="javax.servlet-api" rev="3.1.0" />
-  <dependency org="dom4j" name="dom4j" rev="1.5.2" />
-  <dependency org="com.google.guava" name="guava" rev="23.0" />
+  <dependency org="org.dom4j" name="dom4j" rev="${dom4j.version}" />
+  <dependency org="com.google.guava" name="guava" rev="${com.google.guava.version}" />
   <dependency org="org.apache.httpcomponents" name="httpclient" rev="${httpclient.version}"/>
   <dependency org="org.apache.httpcomponents" name="httpcore" rev="${httpclient.httpcore.version}"/>
   <dependency org="commons-io" name="commons-io" rev="1.4" />
