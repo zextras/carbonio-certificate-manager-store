@@ -19,7 +19,7 @@
   </target>
 
   <target name="jar" depends="build-init,compile" description="Creates the jar file">
-    <antcall target="zimbra-jar">
+    <antcall target="zextras-jar">
       <param name="implementation.title" value="com_zimbra_cert_manager"/>
       <param name="zimbra.extension.class" value="com.zimbra.cert.ZimbraCertMgrExt"/>
     </antcall>

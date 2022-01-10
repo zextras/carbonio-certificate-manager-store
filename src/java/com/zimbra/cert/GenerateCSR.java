@@ -1,19 +1,8 @@
-/*
- * ***** BEGIN LICENSE BLOCK *****
- * Zimbra Collaboration Suite Server
- * Copyright (C) 2007, 2008, 2009, 2010, 2011, 2013, 2014, 2016 Synacor, Inc.
- *
- * This program is free software: you can redistribute it and/or modify it under
- * the terms of the GNU General Public License as published by the Free Software Foundation,
- * version 2 of the License.
- *
- * This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
- * without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details.
- * You should have received a copy of the GNU General Public License along with this program.
- * If not, see <http://www.gnu.org/licenses/>.
- * ***** END LICENSE BLOCK *****
- */
+// SPDX-FileCopyrightText: 2022 Synacor, Inc.
+// SPDX-FileCopyrightText: 2022 Zextras <https://www.zextras.com>
+//
+// SPDX-License-Identifier: GPL-2.0-only
+
 package com.zimbra.cert;
 
 import java.nio.charset.Charset;
@@ -156,7 +145,7 @@ public class GenerateCSR extends AdminDocumentHandler {
         appendToSubject(subject, CertMgrConstants.E_subjectAttr_OU, req.getOu());
         appendToSubject(subject, CertMgrConstants.E_subjectAttr_CN, req.getCn());
         String subjectString = subject.toString();
-        /* Allowed pattern taken from /opt/zimbra/libexec/zmrcd  %REGEX_CHECKED_COMMANDS entry for zmcertmgr */
+        /* Allowed pattern taken from /opt/zextras/libexec/zmrcd  %REGEX_CHECKED_COMMANDS entry for zmcertmgr */
         String regex = "[a-zA-Z0-9/.\\-\\\\_:@,=\'\"* ]*";
         if (!subjectString.matches(regex)) {
             ZimbraLog.security.debug("Invalid subject = '%s' does not match regex %s", subjectString, regex);

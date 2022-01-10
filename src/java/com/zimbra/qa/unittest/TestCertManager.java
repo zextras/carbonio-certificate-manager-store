@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2022 Zextras <https://www.zextras.com>
+//
+// SPDX-License-Identifier: AGPL-3.0-only
+
 package com.zimbra.qa.unittest;
 
 import java.io.ByteArrayInputStream;
@@ -273,7 +277,7 @@ public class TestCertManager extends TestCase {
     }
 
     private void cleanup() throws Exception {
-        File tmpFolder = new File("/opt/zimbra/data/tmp");
+        File tmpFolder = new File("/opt/zextras/data/tmp");
         File tempFiles[] = tmpFolder.listFiles();
         for (File f : tempFiles) {
             if (tmpFolder.exists() && f.isDirectory() && f.getName().matches(UUID_PATTERN)) {

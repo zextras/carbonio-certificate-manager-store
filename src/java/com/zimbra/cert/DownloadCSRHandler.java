@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2022 Zextras <https://www.zextras.com>
+//
+// SPDX-License-Identifier: AGPL-3.0-only
+
 package com.zimbra.cert;
 
 import java.io.BufferedInputStream;
@@ -38,7 +42,7 @@ import com.zimbra.cs.servlet.ZimbraServlet;
 
 public class DownloadCSRHandler extends ExtensionHttpHandler {
     public static final String HANDLER_PATH_NAME = "downloadcsr";
-    public static final String CSR_FILE_NAME = LC.zimbra_home.value() + "/ssl/zimbra/commercial/commercial.csr"; // this path is hardcoded in /opt/zimbra/bin/zmcertmgr
+    public static final String CSR_FILE_NAME = LC.zimbra_home.value() + "/ssl/carbonio/commercial/commercial.csr"; // this path is hardcoded in /opt/zextras/bin/zmcertmgr
     @Override
     public void doGet(HttpServletRequest req, HttpServletResponse resp) throws IOException, ServletException {
         AuthToken authToken = ZimbraServlet.getAdminAuthTokenFromCookie(req, resp);
