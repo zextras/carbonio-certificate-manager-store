@@ -1,57 +1,57 @@
 <project name="zm-certificate-manager-store" default="jar" xmlns:ivy="antlib:org.apache.ivy.ant">
 
-  <import file="../zm-zcs/ant-global.xml"/>
+  <import file="../zm-zcs/ant-global.xml" />
 
-  <property file="build.properties"/>
+  <property file="build.properties" />
 
   <property name="ext.name" value="com_zimbra_cert_manager" />
 
   <!-- dist -->
-  <property name="dist.lib.dir" location="${dist.dir}/lib"/>
-  <property name="dist.lib.ext.dir" location="${dist.lib.dir}/ext"/>
+  <property name="dist.lib.dir" location="${dist.dir}/lib" />
+  <property name="dist.lib.ext.dir" location="${dist.lib.dir}/ext" />
 
   <!-- deploy -->
-  <property name="jar.deploy.dir" location="${zimbra.home.dir}/lib/ext/${ext.name}"/>
+  <property name="jar.deploy.dir" location="${zimbra.home.dir}/lib/ext/${ext.name}" />
 
   <target name="build-init">
-    <mkdir dir="${build.classes.dir}"/>
-    <mkdir dir="${dist.lib.ext.dir}"/>
+    <mkdir dir="${build.classes.dir}" />
+    <mkdir dir="${dist.lib.ext.dir}" />
   </target>
 
   <target name="jar" depends="build-init,compile" description="Creates the jar file">
     <antcall target="zextras-jar">
-      <param name="implementation.title" value="com_zimbra_cert_manager"/>
-      <param name="zimbra.extension.class" value="com.zimbra.cert.ZimbraCertMgrExt"/>
+      <param name="implementation.title" value="com_zimbra_cert_manager" />
+      <param name="zimbra.extension.class" value="com.zimbra.cert.ZimbraCertMgrExt" />
     </antcall>
   </target>
 
   <target name="dist" depends="jar">
     <copy todir="${dist.lib.ext.dir}">
-      <fileset dir="${build.dir}" includes="${jar.file}"/>
+      <fileset dir="${build.dir}" includes="${jar.file}" />
     </copy>
   </target>
 
   <!-- deploy the extension for development -->
   <target name="deploy" depends="jar" description="deploy certificate manager jar">
-    <antcall target="stop-webserver"/>
+    <antcall target="stop-webserver" />
     <copy todir="${jar.deploy.dir}">
-      <fileset dir="${build.dir}" includes="${jar.file}"/>
+      <fileset dir="${build.dir}" includes="${jar.file}" />
     </copy>
-    <antcall target="start-webserver"/>
+    <antcall target="start-webserver" />
   </target>
 
   <target name="undeploy" depends="jar" description="undeploy certificate manager jar">
-    <antcall target="stop-webserver"/>
-    <delete dir="${jar.deploy.dir}"/>
-    <antcall target="start-webserver"/>
+    <antcall target="stop-webserver" />
+    <delete dir="${jar.deploy.dir}" />
+    <antcall target="start-webserver" />
   </target>
 
   <target name="start-webserver">
-    <ant dir="${server.dir}" target="start-webserver" inheritAll="false"/>
+    <ant dir="${server.dir}" target="start-webserver" inheritAll="false" />
   </target>
 
   <target name="stop-webserver">
-    <ant dir="${server.dir}" target="stop-webserver" inheritAll="false"/>
+    <ant dir="${server.dir}" target="stop-webserver" inheritAll="false" />
   </target>
 
 </project>
