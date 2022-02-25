@@ -1,20 +1,17 @@
-<ivy-module version="2.0"
- xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
- xsi:noNamespaceSchemaLocation="http://ant.apache.org/ivy/schemas/ivy.xsd">
- <info organisation="zimbra" module="zm-certificate-manager-store" status="integration">
- </info>
- <dependencies>
-  <dependency org="junit" name="junit" rev="4.8.2" />
-  <dependency org="javax.servlet" name="javax.servlet-api" rev="3.1.0" />
-  <dependency org="org.dom4j" name="dom4j" rev="${dom4j.version}" />
-  <dependency org="com.google.guava" name="guava" rev="${com.google.guava.version}" />
-  <dependency org="org.apache.httpcomponents" name="httpclient" rev="${httpclient.version}"/>
-  <dependency org="org.apache.httpcomponents" name="httpcore" rev="${httpclient.httpcore.version}"/>
-  <dependency org="commons-io" name="commons-io" rev="1.4" />
-  <dependency org="commons-lang" name="commons-lang" rev="2.6" />
-  <dependency org="zimbra" name="zm-client" rev="latest.integration" />
-  <dependency org="zimbra" name="zm-common" rev="latest.integration" />
-  <dependency org="zimbra" name="zm-soap" rev="latest.integration" />
-  <dependency org="zimbra" name="zm-store" rev="latest.integration" />
- </dependencies>
+<ivy-module version="2.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://ant.apache.org/ivy/schemas/ivy.xsd">
+    <info organisation="zimbra" module="zm-certificate-manager-store" status="integration"></info>
+    <dependencies>
+        <dependency org="junit" name="junit" rev="4.8.2" />
+        <dependency org="javax.servlet" name="javax.servlet-api" rev="3.1.0" />
+        <dependency org="org.dom4j" name="dom4j" rev="${dom4j.version}" />
+        <dependency org="com.google.guava" name="guava" rev="${com.google.guava.version}" />
+        <dependency org="org.apache.httpcomponents" name="httpclient" rev="${httpclient.version}" />
+        <dependency org="org.apache.httpcomponents" name="httpcore" rev="${httpclient.httpcore.version}" />
+        <dependency org="commons-io" name="commons-io" rev="1.4" />
+        <dependency org="commons-lang" name="commons-lang" rev="2.6" />
+        <dependency org="zimbra" name="zm-client" rev="latest.integration" />
+        <dependency org="zimbra" name="zm-common" rev="latest.integration" />
+        <dependency org="zimbra" name="zm-soap" rev="latest.integration" />
+        <dependency org="zimbra" name="zm-store" rev="latest.integration" />
+    </dependencies>
 </ivy-module>
