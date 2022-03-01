@@ -1,10 +1,25 @@
 <project name="zm-certificate-manager-store" default="jar" xmlns:ivy="antlib:org.apache.ivy.ant">
 
-  <import file="../zm-zcs/ant-global.xml" />
+  <import file="./build-common.xml" />
 
   <property file="build.properties" />
 
   <property name="ext.name" value="com_zimbra_cert_manager" />
+
+  <!-- Targets -->
+  <target name="publish-local-all" depends="init-ivy-cache">
+    <ant dir="./" target="publish-local" inheritAll="true" />
+    <echo>Publishing jar in local cache</echo>
+  </target>
+
+  <target name="publish-maven-all" depends="publish-local-all">
+    <ant dir="./" target="publish-maven" inheritAll="true" />
+    <echo>Publish artifacts on public maven</echo>
+  </target>
+
+  <target name="init-ivy-cache">
+    <mkdir dir="${user.home}/.ivy2/cache" />
+  </target>
 
   <!-- dist -->
   <property name="dist.lib.dir" location="${dist.dir}/lib" />
