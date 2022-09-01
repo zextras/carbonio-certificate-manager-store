@@ -23,6 +23,7 @@ import com.zimbra.cs.rmgmt.RemoteManager;
 import com.zimbra.cs.rmgmt.RemoteResult;
 import com.zimbra.cs.service.admin.AdminDocumentHandler;
 import com.zimbra.soap.ZimbraSoapContext;
+import org.apache.commons.lang.ArrayUtils;
 
 public class VerifyCertKey extends AdminDocumentHandler {
         final static String CERT_TYPE_SELF= "self" ;
@@ -50,11 +51,6 @@ public class VerifyCertKey extends AdminDocumentHandler {
    			if(prvkeyBuffer == null) {
    				throw ServiceException.INVALID_REQUEST("Input PrivateKey is null",null);
    			}
-   			
-			//String serverPrvKey = prov.getLocalServer().getAttr(ZimbraCertMgrExt.A_zimbraSSLPrivateKey);
-			//ZimbraLog.security.debug(" server prvkey = " + serverPrvKey);
-
-			RemoteManager rmgr = RemoteManager.getRemoteManager(prov.getLocalServer());
 			
 			// replace the space character with '\n'
 			String certBuffer_t = stringFix(certBuffer,true);
@@ -82,13 +78,12 @@ public class VerifyCertKey extends AdminDocumentHandler {
 
 			byte [] prvkeyByte = prvkeyBuffer_t.getBytes();
 			ByteUtil.putContent(keyFile, prvkeyByte) ;
-		
-		
-			String cmd = ZimbraCertMgrExt.VERIFY_COMM_CRTKEY_CMD + " comm "
-				+ " " + keyFile + " " + certFile + " " + caFile;
-			
-			RemoteResult rr = rmgr.execute(cmd);
-			verifyResult = OutputParser.parseVerifyResult(rr.getMStdout());
+
+			final Process zmCertMgrProcess = new ProcessBuilder("/opt/zextras/bin/zmcertmgr", "verifycrt", "comm",
+					keyFile, certFile, caFile).start();
+			final byte[] inputBytes = zmCertMgrProcess.getInputStream().readAllBytes();
+			final byte[] errBytes = zmCertMgrProcess.getErrorStream().readAllBytes();
+			verifyResult = OutputParser.parseVerifyResult(ArrayUtils.addAll(inputBytes,errBytes));
 			ZimbraLog.security.info(" GetVerifyCertResponse:" + verifyResult);
 		}catch (IOException ioe) {
 			throw ServiceException.FAILURE("IOException occurred while running cert verification command", ioe);
@@ -131,8 +126,8 @@ public class VerifyCertKey extends AdminDocumentHandler {
 
 		String HEADER_CERT = "-----BEGIN CERTIFICATE-----";
 		String END_CERT = "-----END CERTIFICATE-----";
-		String HEADER_KEY = "-----BEGIN RSA PRIVATE KEY-----";
-		String END_KEY = "-----END RSA PRIVATE KEY-----";
+		String HEADER_KEY = "-----BEGIN PRIVATE KEY-----";
+		String END_KEY = "-----END PRIVATE KEY-----";
 		String header, end;
 		String out = new String("");;
 		
