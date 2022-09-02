@@ -1,9 +1,15 @@
 <ivy-module version="2.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://ant.apache.org/ivy/schemas/ivy.xsd">
     <info organisation="zimbra" module="zm-certificate-manager-store" status="integration"/>
+    <configurations defaultconfmapping="*->default">
+        <conf name="default" description="Default"/>
+        <conf name="compile" description="Compile dependencies"/>
+        <conf name="runtime" description="Runtime dependencies" extends="compile"/>
+        <conf name="test" description="Test dependencies" extends="runtime"/>
+    </configurations>
     <dependencies>
         <dependency org="ant-contrib" name="ant-contrib" rev="1.0b3" />
-        <dependency org="junit" name="junit" rev="4.8.2" />
-        <dependency org="org.mockito" name="mockito-core" rev="4.4.0"/>
+        <dependency org="junit" name="junit" rev="4.8.2" conf="test" />
+        <dependency org="org.mockito" name="mockito-core" rev="4.4.0" conf="test"/>
         <dependency org="javax.servlet" name="javax.servlet-api" rev="3.1.0" />
         <dependency org="log4j" name="log4j" rev="1.2.16"/>
         <dependency org="org.dom4j" name="dom4j" rev="${dom4j.version}" />
