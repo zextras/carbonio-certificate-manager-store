@@ -128,7 +128,7 @@ public class VerifyCertKey extends AdminDocumentHandler {
    * Parses the command output and checks if it was successful based on displayed information.
    *
    * @param commandResult the received command result
-   * @return if successful
+   * @return if command was successful
    */
   private boolean verifyCrtCommandResult(String commandResult) {
     return !StringUtils.containsIgnoreCase(commandResult, "error");
