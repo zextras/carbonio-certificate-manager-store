@@ -14,7 +14,7 @@
   <credentials host="zextras.jfrog.io" realm="Artifactory Realm" username="${artifactory_user}" passwd="${artifactory_password}" />
 
   <settings defaultResolver="chain-resolver" />
-  <caches defaultCacheDir="${basedir}/.ivy2/cache" />
+  <caches defaultCacheDir="${dev.home}/.ivy2/cache" />
   <resolvers>
     <chain name="chain-resolver" returnFirst="true">
       <filesystem name="local">

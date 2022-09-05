@@ -16,7 +16,6 @@
         <dependency org="junit" name="junit" rev="4.8.2" conf="test" />
         <dependency org="org.mockito" name="mockito-core" rev="4.4.0" conf="test"/>
         <dependency org="javax.servlet" name="javax.servlet-api" rev="3.1.0" />
-        <dependency org="log4j" name="log4j" rev="1.2.16"/>
         <dependency org="org.dom4j" name="dom4j" rev="${dom4j.version}" />
         <dependency org="com.google.guava" name="guava" rev="${com.google.guava.version}" />
         <dependency org="org.apache.httpcomponents" name="httpclient" rev="${httpclient.version}" />
