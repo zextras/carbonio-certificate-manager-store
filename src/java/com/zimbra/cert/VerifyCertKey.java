@@ -20,8 +20,13 @@ import java.util.Map;
 import org.apache.commons.lang.StringUtils;
 
 /**
- * Verifies provided private key and certificate against the server using zmcertmgr verifycrt.
- * It also verifies the chain certificate as it was issued by this server itself.
+ * Admin Handler class to verify provided private key and certificate using zmcertmgr verifycrt. It
+ * verifies the crt and the key content as well the ca. At the moment the ca is the same as the crt,
+ * so the certificate is expected to include the chain.
+ * <p>
+ * NOTE: The provided content is formatted by replacing spaces with newlines, for cases such as
+ * copy-paste from a terminal. This should be taken in consideration when calling the API, as
+ * zmcertmgr may fail if the content is not as expected.
  */
 public class VerifyCertKey extends AdminDocumentHandler {
 
@@ -37,6 +42,14 @@ public class VerifyCertKey extends AdminDocumentHandler {
     this.baseOperationPath = baseOperationPath;
   }
 
+  /**
+   * Handles the request.
+   *
+   * @param request {@link Element} representation of {@link com.zimbra.soap.admin.message.VerifyCertKeyRequest}
+   * @param context request context
+   * @return {@link Element} representation of {@link com.zimbra.soap.admin.message.VerifyCertKeyResponse}
+   * @throws ServiceException
+   */
   @Override
   public Element handle(Element request, Map<String, Object> context) throws ServiceException {
     ZimbraSoapContext lc = getZimbraSoapContext(context);
@@ -50,8 +63,8 @@ public class VerifyCertKey extends AdminDocumentHandler {
 
     try {
       // replace the space character with '\n'
-      String sanitizedCrt = formatWithNewLine(certBuffer);
-      String sanitizedPvtKey = formatWithNewLine(pvtKeyBuffer);
+      String sanitizedCrt = formatValidContent(certBuffer);
+      String sanitizedPvtKey = formatValidContent(pvtKeyBuffer);
 
       if (sanitizedCrt.length() == 0 || sanitizedPvtKey.length() == 0) {
         response.addAttribute(CertMgrConstants.A_verifyResult, "invalid");
@@ -115,13 +128,28 @@ public class VerifyCertKey extends AdminDocumentHandler {
   }
 
   /**
-   * Replaces spaces with new lines.
+   * Formats web client input to valid private key and crt content. The method replaces spaces with
+   * new lines but preserves header structure.
    *
    * @param input input string
-   * @return formatted string
+   * @return formatted string with headers and content separated by new lines
    */
-  private String formatWithNewLine(String input) {
-    return input.replaceAll("\\s", "\n");
+  public String formatValidContent(String input) {
+    // splits on every "-----" followed or preceded by spaces and removes spaces
+    final String splitRegex = "(\\s)(?=(-----))|(?<=(-----))(\\s)";
+    final StringBuilder result = new StringBuilder();
+    for (String line : input.split(splitRegex)) {
+      if (line.contains("BEGIN")) {
+        result.append(line).append(System.lineSeparator());
+        continue;
+      }
+      if (line.contains("END")) {
+        result.append(System.lineSeparator()).append(line).append(System.lineSeparator());
+        continue;
+      }
+      result.append(line.replaceAll("(\\s)", System.lineSeparator()));
+    }
+    return result.toString();
   }
 
   /**
