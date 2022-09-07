@@ -144,8 +144,8 @@ public class VerifyCertKeyTest {
   }
 
   /**
-   * If the input has more than one space in between headers or,
-   * the result should be different from a proper-formatted files.
+   * If the input has more than one space in between headers or content,
+   * the result should be different from a proper well-formatted certificate file.
    */
   @Test
   public void shouldNotMatchExpectedContentWhenInputMalformed() {
