@@ -57,9 +57,10 @@ public class VerifyCertKey extends AdminDocumentHandler {
     String pvtKeyBuffer = request.getAttribute(CertMgrConstants.A_privkey);
     Element response = lc.createElement(CertMgrConstants.VERIFY_CERTKEY_RESPONSE);
     boolean verifyResult = false;
-    final String keyFile = baseOperationPath + ZimbraCertMgrExt.COMM_CRT_KEY_FILE_NAME;
-    final String certFile = baseOperationPath + ZimbraCertMgrExt.COMM_CRT_FILE_NAME;
-    final String caFile = baseOperationPath + ZimbraCertMgrExt.COMM_CRT_CA_FILE_NAME;
+    final String tmpPath = baseOperationPath + LdapUtil.generateUUID() + File.separator;
+    final String keyFile = tmpPath + ZimbraCertMgrExt.COMM_CRT_KEY_FILE_NAME;
+    final String certFile = tmpPath + ZimbraCertMgrExt.COMM_CRT_FILE_NAME;
+    final String caFile = tmpPath + ZimbraCertMgrExt.COMM_CRT_CA_FILE_NAME;
 
     try {
       // replace the space character with '\n'
@@ -75,7 +76,6 @@ public class VerifyCertKey extends AdminDocumentHandler {
       byte[] crtBytes = sanitizedCrt.getBytes();
       byte[] pvtKeyBytes = sanitizedPvtKey.getBytes();
 
-      final String tmpPath = baseOperationPath + LdapUtil.generateUUID() + File.separator;
       File comm_path = new File(tmpPath);
       if (!comm_path.exists()) {
         if (!comm_path.mkdirs()) {
