@@ -27,6 +27,8 @@ import org.apache.commons.lang.StringUtils;
  * NOTE: The provided content is formatted by replacing spaces with newlines, for cases such as
  * copy-paste from a terminal. This should be taken in consideration when calling the API, as
  * zmcertmgr may fail if the content is not as expected.
+ * It has been tested though that spaces before or after headers do not affect the result.
+ * Additional spaces in the base64 content instead cause the verification to fail.
  */
 public class VerifyCertKey extends AdminDocumentHandler {
 
