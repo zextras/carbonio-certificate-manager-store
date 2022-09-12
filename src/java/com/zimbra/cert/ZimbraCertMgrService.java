@@ -5,9 +5,12 @@
 
 package com.zimbra.cert;
 
+import com.zimbra.cert.util.ProcessStarterProvider;
+import com.zimbra.common.localconfig.LC;
 import com.zimbra.common.soap.CertMgrConstants;
 import com.zimbra.soap.DocumentDispatcher;
 import com.zimbra.soap.DocumentService;
+import java.io.File;
 
 
 public class ZimbraCertMgrService implements DocumentService {
@@ -17,7 +20,8 @@ public class ZimbraCertMgrService implements DocumentService {
         dispatcher.registerHandler(CertMgrConstants.GET_CERT_REQUEST, new GetCert());
         dispatcher.registerHandler(CertMgrConstants.GEN_CSR_REQUEST, new GenerateCSR());
         dispatcher.registerHandler(CertMgrConstants.GET_CSR_REQUEST, new GetCSR());
-	    dispatcher.registerHandler(CertMgrConstants.VERIFY_CERTKEY_REQUEST, new VerifyCertKey());
+	    dispatcher.registerHandler(CertMgrConstants.VERIFY_CERTKEY_REQUEST, new VerifyCertKey(
+          new ProcessStarterProvider(), LC.zimbra_tmp_directory.value() + File.separator));
         dispatcher.registerHandler(CertMgrConstants.UPLOAD_DOMCERT_REQUEST, new UploadDomCert());
         dispatcher.registerHandler(CertMgrConstants.UPLOAD_PROXYCA_REQUEST, new UploadProxyCA());
     }

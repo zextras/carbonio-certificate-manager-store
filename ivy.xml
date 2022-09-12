@@ -1,7 +1,20 @@
 <ivy-module version="2.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://ant.apache.org/ivy/schemas/ivy.xsd">
-    <info organisation="zimbra" module="zm-certificate-manager-store" status="integration"></info>
+    <info organisation="zimbra" module="zm-certificate-manager-store" status="integration"/>
+    <!-- See: https://ant.apache.org/ivy/history/2.3.0/ivyfile/configurations.html for documentation
+    The idea is to always download the default maven configuration on remote repo.
+    By default, without configuration mapping, Ivy tries to download content for all configurations (sources, javadoc, etc.)
+    but some libraries, as ant, do not ship it, so the build fails. This can be refined for specific dependencies
+    but for now it is safe to download always the default -->
+    <configurations defaultconfmapping="*->default">
+        <conf name="default" description="Default"/>
+        <conf name="compile" description="Compile dependencies"/>
+        <conf name="runtime" description="Runtime dependencies" extends="compile"/>
+        <conf name="test" description="Test dependencies" extends="runtime"/>
+    </configurations>
     <dependencies>
-        <dependency org="junit" name="junit" rev="4.8.2" />
+        <dependency org="ant-contrib" name="ant-contrib" rev="1.0b3" />
+        <dependency org="junit" name="junit" rev="4.8.2" conf="test" />
+        <dependency org="org.mockito" name="mockito-core" rev="4.4.0" conf="test"/>
         <dependency org="javax.servlet" name="javax.servlet-api" rev="3.1.0" />
         <dependency org="org.dom4j" name="dom4j" rev="${dom4j.version}" />
         <dependency org="com.google.guava" name="guava" rev="${com.google.guava.version}" />

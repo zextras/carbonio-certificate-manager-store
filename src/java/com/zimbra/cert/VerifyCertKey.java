@@ -5,161 +5,165 @@
 
 package com.zimbra.cert;
 
-import java.io.File;
-import java.io.IOException;
-import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.Map;
-
-import com.zimbra.common.localconfig.LC;
+import com.zimbra.cert.util.ProcessStarter;
 import com.zimbra.common.service.ServiceException;
 import com.zimbra.common.soap.CertMgrConstants;
 import com.zimbra.common.soap.Element;
 import com.zimbra.common.util.ByteUtil;
 import com.zimbra.common.util.ZimbraLog;
-import com.zimbra.cs.account.Provisioning;
 import com.zimbra.cs.ldap.LdapUtil;
-import com.zimbra.cs.rmgmt.RemoteManager;
-import com.zimbra.cs.rmgmt.RemoteResult;
 import com.zimbra.cs.service.admin.AdminDocumentHandler;
 import com.zimbra.soap.ZimbraSoapContext;
+import java.io.File;
+import java.io.IOException;
+import java.util.Map;
+import org.apache.commons.lang.StringUtils;
 
+/**
+ * Admin Handler class to verify provided private key and certificate using zmcertmgr verifycrt. It
+ * verifies the crt and the key content as well the ca. At the moment the ca is the same as the crt,
+ * so the certificate is expected to include the chain.
+ * <p>
+ * NOTE: The provided content is formatted by replacing spaces with newlines, for cases such as
+ * copy-paste from a terminal. This should be taken in consideration when calling the API, as
+ * zmcertmgr may fail if the content is not as expected.
+ * It has been tested though that spaces before or after headers do not affect the result.
+ * Additional spaces in the base64 content instead cause the verification to fail.
+ */
 public class VerifyCertKey extends AdminDocumentHandler {
-        final static String CERT_TYPE_SELF= "self" ;
-        final static String CERT_TYPE_COMM = "comm" ;
-    	private Provisioning prov = null;
-	private boolean verifyResult = false;
 
-    @Override
-    public Element handle(Element request, Map<String, Object> context) throws ServiceException {
-        ZimbraSoapContext lc = getZimbraSoapContext(context);
-        prov = Provisioning.getInstance();
-        String certBuffer = request.getAttribute(CertMgrConstants.E_cert);
-        String prvkeyBuffer = request.getAttribute(CertMgrConstants.A_privkey);
-        Element response = lc.createElement(CertMgrConstants.VERIFY_CERTKEY_RESPONSE);
+  final static String VERIFY_CERT_COMMAND = "verifycrt";
+  final static String CERT_MGR = "/opt/zextras/bin/zmcertmgr";
+  final static String CERT_TYPE_COMM = "comm";
 
-        String storedPath = LC.zimbra_tmp_directory.value() + File.separator + LdapUtil.generateUUID() + File.separator;
-        String keyFile = storedPath + ZimbraCertMgrExt.COMM_CRT_KEY_FILE_NAME;
-        String certFile = storedPath + ZimbraCertMgrExt.COMM_CRT_FILE_NAME;
-        String caFile = storedPath + ZimbraCertMgrExt.COMM_CRT_CA_FILE_NAME;
+  private final ProcessStarter processStarter;
+  private final String baseOperationPath;
 
-		try {
-   			if(certBuffer == null) {
-   				throw ServiceException.INVALID_REQUEST("Input Certificate is null", null);
-   			}
-   			if(prvkeyBuffer == null) {
-   				throw ServiceException.INVALID_REQUEST("Input PrivateKey is null",null);
-   			}
-   			
-			//String serverPrvKey = prov.getLocalServer().getAttr(ZimbraCertMgrExt.A_zimbraSSLPrivateKey);
-			//ZimbraLog.security.debug(" server prvkey = " + serverPrvKey);
+  public VerifyCertKey(ProcessStarter baseProcess, String baseOperationPath) {
+    this.processStarter = baseProcess;
+    this.baseOperationPath = baseOperationPath;
+  }
 
-			RemoteManager rmgr = RemoteManager.getRemoteManager(prov.getLocalServer());
-			
-			// replace the space character with '\n'
-			String certBuffer_t = stringFix(certBuffer,true);
-			String prvkeyBuffer_t = stringFix(prvkeyBuffer,false);
+  /**
+   * Handles the request.
+   *
+   * @param request {@link Element} representation of {@link com.zimbra.soap.admin.message.VerifyCertKeyRequest}
+   * @param context request context
+   * @return {@link Element} representation of {@link com.zimbra.soap.admin.message.VerifyCertKeyResponse}
+   * @throws ServiceException
+   */
+  @Override
+  public Element handle(Element request, Map<String, Object> context) throws ServiceException {
+    ZimbraSoapContext lc = getZimbraSoapContext(context);
+    String certBuffer = request.getAttribute(CertMgrConstants.E_cert);
+    String pvtKeyBuffer = request.getAttribute(CertMgrConstants.A_privkey);
+    Element response = lc.createElement(CertMgrConstants.VERIFY_CERTKEY_RESPONSE);
+    boolean verifyResult = false;
+    final String tmpPath = baseOperationPath + LdapUtil.generateUUID() + File.separator;
+    final String keyFile = tmpPath + ZimbraCertMgrExt.COMM_CRT_KEY_FILE_NAME;
+    final String certFile = tmpPath + ZimbraCertMgrExt.COMM_CRT_FILE_NAME;
+    final String caFile = tmpPath + ZimbraCertMgrExt.COMM_CRT_CA_FILE_NAME;
 
-			if(certBuffer_t.length() == 0 || prvkeyBuffer_t.length() == 0) {
-				// invalid certificate or privkey, return invalid
-				response.addAttribute(CertMgrConstants.A_verifyResult, "invalid");
-				return response;
-			}
+    try {
+      // replace the space character with '\n'
+      String sanitizedCrt = formatValidContent(certBuffer);
+      String sanitizedPvtKey = formatValidContent(pvtKeyBuffer);
 
-			byte [] certByte = certBuffer_t.getBytes();
+      if (sanitizedCrt.length() == 0 || sanitizedPvtKey.length() == 0) {
+        response.addAttribute(CertMgrConstants.A_verifyResult, "invalid");
+        return response;
+      }
 
-            File comm_path = new File(storedPath);
-            if (!comm_path.exists()) {
-                if (!comm_path.mkdirs()) {
-                    throw ServiceException.FAILURE("Cannot create dir " + comm_path.getAbsolutePath().toString(), null);
-                }
-            } else if (!comm_path.isDirectory()) {
-                throw ServiceException.FAILURE("Path is not a directory: " + comm_path.getAbsolutePath().toString(),
-                        null);
-            }
-			ByteUtil.putContent(certFile, certByte);
-			ByteUtil.putContent(caFile, certByte);
+      // store pvt key, crt and ca in a temporary file
+      byte[] crtBytes = sanitizedCrt.getBytes();
+      byte[] pvtKeyBytes = sanitizedPvtKey.getBytes();
 
-			byte [] prvkeyByte = prvkeyBuffer_t.getBytes();
-			ByteUtil.putContent(keyFile, prvkeyByte) ;
-		
-		
-			String cmd = ZimbraCertMgrExt.VERIFY_COMM_CRTKEY_CMD + " comm "
-				+ " " + keyFile + " " + certFile + " " + caFile;
-			
-			RemoteResult rr = rmgr.execute(cmd);
-			verifyResult = OutputParser.parseVerifyResult(rr.getMStdout());
-			ZimbraLog.security.info(" GetVerifyCertResponse:" + verifyResult);
-		}catch (IOException ioe) {
-			throw ServiceException.FAILURE("IOException occurred while running cert verification command", ioe);
-		}
+      File comm_path = new File(tmpPath);
+      if (!comm_path.exists()) {
+        if (!comm_path.mkdirs()) {
+          throw ServiceException.FAILURE(
+              "Cannot create dir " + comm_path.getAbsolutePath(), null);
+        }
+      } else if (!comm_path.isDirectory()) {
+        throw ServiceException.FAILURE(
+            "Path is not a directory: " + comm_path.getAbsolutePath(),
+            null);
+      }
 
-            	try {
+      ByteUtil.putContent(certFile, crtBytes);
+      ByteUtil.putContent(caFile, crtBytes);
+      ByteUtil.putContent(keyFile, pvtKeyBytes);
 
-                	File comm_priv = new File (keyFile);
-	                if (!comm_priv.delete()) {
-        	             throw new SecurityException ("Deleting commercial private key file failed.")  ;
-                	}
-                        File comm_cert = new File (certFile);
-                        if (!comm_cert.delete()) {
-                             throw new SecurityException ("Deleting commercial certificate file failed.")  ;
-                        }
-                        File comm_ca = new File (caFile);
-                        if (!comm_ca.delete()) {
-                             throw new SecurityException ("Deleting commercial CA certificate file failed.")  ;
-                        }
+      final Process zmCertMgrProcess = processStarter.start(CERT_MGR, VERIFY_CERT_COMMAND,
+          CERT_TYPE_COMM,
+          keyFile, certFile, caFile);
+      verifyResult = this.verifyCrtCommandResult(
+          new String(zmCertMgrProcess.getInputStream().readAllBytes()));
+      ZimbraLog.security.info(" GetVerifyCertResponse:" + verifyResult);
 
-			File comm_path = new File(storedPath);
-			if(!comm_path.delete()) {
-			     throw new SecurityException ("Deleting directory of certificate/key failed.")  ;
-			}
+      File comm_priv = new File(keyFile);
+      if (!comm_priv.delete()) {
+        throw new SecurityException("Deleting commercial private key file failed.");
+      }
+      File comm_cert = new File(certFile);
+      if (!comm_cert.delete()) {
+        throw new SecurityException("Deleting commercial certificate file failed.");
+      }
+      File comm_ca = new File(caFile);
+      if (!comm_ca.delete()) {
+        throw new SecurityException("Deleting commercial CA certificate file failed.");
+      }
 
- 	        }catch (SecurityException se) {
-        	        ZimbraLog.security.error ("File(s) of commercial certificates/prvkey was not deleted", se ) ;
-            	}
+      if (!comm_path.delete()) {
+        throw new SecurityException("Deleting directory of certificate/key failed.");
+      }
 
-		if(verifyResult)
-	        	response.addAttribute(CertMgrConstants.A_verifyResult, "true");
-		else response.addAttribute(CertMgrConstants.A_verifyResult, "false");
-	        return response;
+    } catch (SecurityException se) {
+      ZimbraLog.security.error("File(s) of commercial certificates/prvkey was not deleted", se);
+    } catch (IOException ioe) {
+      throw ServiceException.FAILURE("IOException occurred while running cert verification command",
+          ioe);
+    }
 
-  		
-   	}
+    response.addAttribute(CertMgrConstants.A_verifyResult, verifyResult);
+    return response;
+  }
 
-	private String stringFix(String in, boolean isCert) {
-		if(in.length() < 0) return new String("");
+  /**
+   * Formats web client input to valid private key and crt content. The method replaces spaces with
+   * new lines but preserves header structure.
+   *
+   * @param input input string
+   * @return formatted string with headers and content separated by new lines
+   */
+  public String formatValidContent(String input) {
+    // splits on every "-----" followed or preceded by spaces and removes spaces
+    final String splitRegex = "(\\s)(?=(-----))|(?<=(-----))(\\s)";
+    final StringBuilder result = new StringBuilder();
+    for (String line : input.split(splitRegex)) {
+      if (line.contains("BEGIN")) {
+        result.append(line).append(System.lineSeparator());
+        continue;
+      }
+      if (line.contains("END")) {
+        result.append(System.lineSeparator()).append(line).append(System.lineSeparator());
+        continue;
+      }
+      result.append(line.replaceAll("(\\s)", System.lineSeparator()));
+    }
+    return result.toString();
+  }
 
-		String HEADER_CERT = "-----BEGIN CERTIFICATE-----";
-		String END_CERT = "-----END CERTIFICATE-----";
-		String HEADER_KEY = "-----BEGIN RSA PRIVATE KEY-----";
-		String END_KEY = "-----END RSA PRIVATE KEY-----";
-		String header, end;
-		String out = new String("");;
-		
-		if(isCert){
-			header = HEADER_CERT;
-			end = END_CERT;
-		}else {
-			header = HEADER_KEY;
-			end = END_KEY;
-		}
-			
-		String [] strArr = in.split(end);
-		for(int i = 0; i < strArr.length; i++){
-			int l = strArr[i].indexOf(header);
-			if(l == -1) continue;
-			String subStr = strArr[i].substring(l + header.length());
-			String repStr = subStr.replace(' ','\n');
-			out += (header + repStr + end + "\n");
-		}
-		return out;
-		
-	}
-	
-	private String getCurrentTimeStamp() {
-		SimpleDateFormat fmt = new SimpleDateFormat("yyyyMMdd.HHmmss.SSS");
-		return 	fmt.format(new Date());
-	}
+  /**
+   * Parses the command output and checks if it was successful based on displayed information.
+   *
+   * @param commandResult the received command result
+   * @return if command was successful
+   */
+  private boolean verifyCrtCommandResult(String commandResult) {
+    return !StringUtils.containsIgnoreCase(commandResult, "error");
+  }
+
 }
 
 

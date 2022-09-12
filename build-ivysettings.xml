@@ -23,12 +23,7 @@
         <artifact pattern="${dev.home}/.zcs-deps/[organisation].[ext]" />
 
       </filesystem>
-      <url name="maven-https-org">
-        <artifact pattern="https://repo1.maven.org/maven2/[organization]/[module]/[revision]/[artifact]-[revision].[ext]" />
-      </url>
-      <url name="maven-https-orgPath">
-        <artifact pattern="https://repo1.maven.org/maven2/[orgPath]/[module]/[revision]/[artifact]-[revision].[ext]" />
-      </url>
+      <ibiblio name="maven" m2compatible="true"/>
       <ibiblio name="public-maven" m2compatible="true" root="https://zextras.jfrog.io/artifactory/public-maven-repo" />
       <ibiblio name="maven-redhat" root="https://maven.repository.redhat.com/ga/" pattern="[organisation]/[module]/[revision]/[module]-[revision].[ext]" />
       <url name="liferay-https-orgPath">
