@@ -1,3 +1,7 @@
+def mvnCmd(String cmd) {
+  sh 'mvn -B -s settings.xml ' + cmd
+}
+
 pipeline {
     agent {
         node {
@@ -7,6 +11,8 @@ pipeline {
     environment {
         JAVA_OPTS = '-Dfile.encoding=UTF8'
         LC_ALL = 'C.UTF-8'
+        ARTIFACTORY_ACCESS=credentials('artifactory-jenkins-gradle-properties-splitted')
+        BUILD_PROPERTIES_PARAMS='-Dartifactory_user=$ARTIFACTORY_ACCESS_USR -Dartifactory_password=$ARTIFACTORY_ACCESS_PSW'
         jenkins_build = 'true'
     }
     options {
@@ -20,24 +26,9 @@ pipeline {
                 checkout scm
             }
         }
-        stage('Build') {
+        stage('Build with tests') {
             steps {
-                withCredentials([file(credentialsId: 'artifactory-jenkins-gradle-properties', variable: 'CREDENTIALS')]) {
-                    sh '''
-                        sudo apt update -y && sudo apt install -y ant-contrib
-                        cat <<EOF > build.properties
-                        debug=0
-                        is-production=1
-                        carbonio.buildinfo.version=22.9.0_ZEXTRAS_202209
-                        EOF
-                       '''
-                    sh "cat ${CREDENTIALS} | sed -E 's#\\\\#\\\\\\\\#g' >> build.properties"
-                    sh '''
-                        ANT_RESPECT_JAVA_HOME=true JAVA_HOME=/usr/lib/jvm/java-11-openjdk-amd64/ ant \
-                             -propertyfile build.properties \
-                             jar
-                        '''
-                }
+              mvnCmd("$BUILD_PROPERTIES_PARAMS clean verify")
             }
         }
 
@@ -46,21 +37,7 @@ pipeline {
                 buildingTag()
             }
             steps {
-                withCredentials([file(credentialsId: 'artifactory-jenkins-gradle-properties', variable: 'CREDENTIALS')]) {
-                    sh '''
-                        cat <<EOF > build.properties
-                        debug=0
-                        is-production=1
-                        carbonio.buildinfo.version=22.9.0_ZEXTRAS_202209
-                        EOF
-                       '''
-                    sh "cat ${CREDENTIALS} | sed -E 's#\\\\#\\\\\\\\#g' >> build.properties"
-                    sh '''
-                        ANT_RESPECT_JAVA_HOME=true JAVA_HOME=/usr/lib/jvm/java-11-openjdk-amd64/ ant \
-                             -propertyfile build.properties \
-                             publish-maven-all
-                        '''
-                }
+                mvnCmd("$BUILD_PROPERTIES_PARAMS deploy")
             }
         }
     }
