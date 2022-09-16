@@ -11,14 +11,11 @@ A Java library to handle the certificates management operations.
 
 ## How to build
 
-Since we are dealing with an Ant project, in order to build it you
-have to give the following command:
-
 ```sh
-ant jar
+mvn package
 ```
 
-This will generate a `jar` file under the `build` directory.
+This will generate a `jar` file under the `target` directory.
 
 ## Additional references
 
