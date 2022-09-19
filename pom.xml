@@ -134,6 +134,26 @@
 
   <build>
       <plugins>
+        <!-- MANIFEST properties for Extension  class-->
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-jar-plugin</artifactId>
+          <version>3.3.0</version>
+          <configuration>
+            <archive>
+              <manifestEntries>
+                <Main-Class>com.zimbra.buildinfo.Version</Main-Class>
+                <Implementation-Vendor>Zimbra Software, LLC</Implementation-Vendor>
+                <Implementation-Title>com_zimbra_cert_manager</Implementation-Title>
+                <Implementation-Version>${version}</Implementation-Version>
+                <Specification-Vendor>Zimbra Software, LLC</Specification-Vendor>
+                <Specification-Title>Zimbra Collaboration Suite</Specification-Title>
+                <Specification-Version>${version}</Specification-Version>
+                <Zimbra-Extension-Class>com.zimbra.cert.ZimbraCertMgrExt</Zimbra-Extension-Class>
+              </manifestEntries>
+            </archive>
+          </configuration>
+        </plugin>
         <!-- Testing -->
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
