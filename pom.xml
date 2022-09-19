@@ -26,18 +26,12 @@
         <repository>
           <id>zextras-snapshots-repo</id>
           <name>Zextras Snapshots Repo</name>
-          <url>https://zextras.jfrog.io/artifactory/public-maven-repo</url>
+          <url>https://zextras.jfrog.io/artifactory/maven-snapshot</url>
           <snapshots>
             <enabled>true</enabled>
           </snapshots>
         </repository>
       </repositories>
-      <distributionManagement>
-        <repository>
-          <id>zextras-snapshots-repo</id>
-          <url>https://zextras.jfrog.io/artifactory/public-maven-repo</url>
-        </repository>
-      </distributionManagement>
     </profile>
   </profiles>
 
