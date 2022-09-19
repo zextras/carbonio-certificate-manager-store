@@ -12,13 +12,10 @@ import com.zimbra.common.soap.Element;
 import com.zimbra.common.util.ByteUtil;
 import com.zimbra.common.util.ZimbraLog;
 import com.zimbra.cs.service.admin.AdminDocumentHandler;
-import com.zimbra.soap.JaxbUtil;
 import com.zimbra.soap.ZimbraSoapContext;
-import com.zimbra.soap.admin.message.VerifyCertKeyRequest;
 import java.io.File;
 import java.io.IOException;
 import java.util.Map;
-import java.util.Objects;
 import java.util.function.Supplier;
 import org.apache.commons.lang.StringUtils;
 
@@ -26,18 +23,18 @@ import org.apache.commons.lang.StringUtils;
  * Admin Handler class to verify provided private key and certificate using zmcertmgr verifycrt. It
  * verifies the crt and the key content as well the ca. At the moment the ca is the same as the crt,
  * so the certificate is expected to include the chain.
- * <p>
- * NOTE: The provided content is formatted by replacing spaces with newlines, for cases such as
+ *
+ * <p>NOTE: The provided content is formatted by replacing spaces with newlines, for cases such as
  * copy-paste from a terminal. This should be taken in consideration when calling the API, as
- * zmcertmgr may fail if the content is not as expected.
- * It has been tested though that spaces before or after headers do not affect the result.
- * Additional spaces in the base64 content instead cause the verification to fail.
+ * zmcertmgr may fail if the content is not as expected. It has been tested though that spaces
+ * before or after headers do not affect the result. Additional spaces in the base64 content instead
+ * cause the verification to fail.
  */
 public class VerifyCertKey extends AdminDocumentHandler {
 
-  final static String VERIFY_CERT_COMMAND = "verifycrt";
-  final static String CERT_MGR = "/opt/zextras/bin/zmcertmgr";
-  final static String CERT_TYPE_COMM = "comm";
+  static final String VERIFY_CERT_COMMAND = "verifycrt";
+  static final String CERT_MGR = "/opt/zextras/bin/zmcertmgr";
+  static final String CERT_TYPE_COMM = "comm";
 
   private final ProcessStarter processStarter;
   private final Supplier<String> basePathSupplier;
@@ -50,9 +47,11 @@ public class VerifyCertKey extends AdminDocumentHandler {
   /**
    * Handles the request.
    *
-   * @param request {@link Element} representation of {@link com.zimbra.soap.admin.message.VerifyCertKeyRequest}
+   * @param request {@link Element} representation of {@link
+   *     com.zimbra.soap.admin.message.VerifyCertKeyRequest}
    * @param context request context
-   * @return {@link Element} representation of {@link com.zimbra.soap.admin.message.VerifyCertKeyResponse}
+   * @return {@link Element} representation of {@link
+   *     com.zimbra.soap.admin.message.VerifyCertKeyResponse}
    * @throws ServiceException
    */
   @Override
@@ -61,10 +60,6 @@ public class VerifyCertKey extends AdminDocumentHandler {
     Element response = zsc.createElement(CertMgrConstants.VERIFY_CERTKEY_RESPONSE);
     String certBuffer = request.getAttribute(CertMgrConstants.E_cert);
     String pvtKeyBuffer = request.getAttribute(CertMgrConstants.A_privkey);
-    String certificateChain = request.getAttribute(CertMgrConstants.A_ca, "");
-    if (Objects.isNull(certificateChain) || Objects.equals("", certificateChain)) {
-      certificateChain = certBuffer;
-    }
 
     boolean verifyResult = false;
     final String tmpPath = basePathSupplier.get();
@@ -76,7 +71,6 @@ public class VerifyCertKey extends AdminDocumentHandler {
       // replace the space character with '\n'
       String sanitizedCrt = formatValidContent(certBuffer);
       String sanitizedPvtKey = formatValidContent(pvtKeyBuffer);
-      String sanitizedCertChain = formatValidContent(certificateChain);
 
       if (sanitizedCrt.length() == 0 || sanitizedPvtKey.length() == 0) {
         response.addAttribute(CertMgrConstants.A_verifyResult, "invalid");
@@ -85,30 +79,27 @@ public class VerifyCertKey extends AdminDocumentHandler {
 
       // store pvt key, crt and ca in a temporary file
       byte[] crtBytes = sanitizedCrt.getBytes();
-      byte[] crtChainBytes = sanitizedCertChain.getBytes();
       byte[] pvtKeyBytes = sanitizedPvtKey.getBytes();
 
       File comm_path = new File(tmpPath);
       if (!comm_path.exists()) {
         if (!comm_path.mkdirs()) {
-          throw ServiceException.FAILURE(
-              "Cannot create dir " + comm_path.getAbsolutePath(), null);
+          throw ServiceException.FAILURE("Cannot create dir " + comm_path.getAbsolutePath(), null);
         }
       } else if (!comm_path.isDirectory()) {
         throw ServiceException.FAILURE(
-            "Path is not a directory: " + comm_path.getAbsolutePath(),
-            null);
+            "Path is not a directory: " + comm_path.getAbsolutePath(), null);
       }
 
       ByteUtil.putContent(certFile, crtBytes);
-      ByteUtil.putContent(caFile, crtChainBytes);
+      ByteUtil.putContent(caFile, crtBytes);
       ByteUtil.putContent(keyFile, pvtKeyBytes);
 
-      final Process zmCertMgrProcess = processStarter.start(CERT_MGR, VERIFY_CERT_COMMAND,
-          CERT_TYPE_COMM,
-          keyFile, certFile, caFile);
-      verifyResult = this.verifyCrtCommandResult(
-          new String(zmCertMgrProcess.getInputStream().readAllBytes()));
+      final Process zmCertMgrProcess =
+          processStarter.start(
+              CERT_MGR, VERIFY_CERT_COMMAND, CERT_TYPE_COMM, keyFile, certFile, caFile);
+      verifyResult =
+          this.verifyCrtCommandResult(new String(zmCertMgrProcess.getInputStream().readAllBytes()));
       ZimbraLog.security.info(" GetVerifyCertResponse:" + verifyResult);
 
       File comm_priv = new File(keyFile);
@@ -131,8 +122,8 @@ public class VerifyCertKey extends AdminDocumentHandler {
     } catch (SecurityException se) {
       ZimbraLog.security.error("File(s) of commercial certificates/prvkey was not deleted", se);
     } catch (IOException ioe) {
-      throw ServiceException.FAILURE("IOException occurred while running cert verification command",
-          ioe);
+      throw ServiceException.FAILURE(
+          "IOException occurred while running cert verification command", ioe);
     }
 
     response.addAttribute(CertMgrConstants.A_verifyResult, verifyResult);
@@ -173,7 +164,4 @@ public class VerifyCertKey extends AdminDocumentHandler {
   private boolean verifyCrtCommandResult(String commandResult) {
     return !StringUtils.containsIgnoreCase(commandResult, "error");
   }
-
 }
-
-
