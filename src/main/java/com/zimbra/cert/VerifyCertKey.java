@@ -11,55 +11,58 @@ import com.zimbra.common.soap.CertMgrConstants;
 import com.zimbra.common.soap.Element;
 import com.zimbra.common.util.ByteUtil;
 import com.zimbra.common.util.ZimbraLog;
-import com.zimbra.cs.ldap.LdapUtil;
 import com.zimbra.cs.service.admin.AdminDocumentHandler;
 import com.zimbra.soap.ZimbraSoapContext;
 import java.io.File;
 import java.io.IOException;
 import java.util.Map;
+import java.util.function.Supplier;
 import org.apache.commons.lang.StringUtils;
 
 /**
  * Admin Handler class to verify provided private key and certificate using zmcertmgr verifycrt. It
  * verifies the crt and the key content as well the ca. At the moment the ca is the same as the crt,
  * so the certificate is expected to include the chain.
- * <p>
- * NOTE: The provided content is formatted by replacing spaces with newlines, for cases such as
+ *
+ * <p>NOTE: The provided content is formatted by replacing spaces with newlines, for cases such as
  * copy-paste from a terminal. This should be taken in consideration when calling the API, as
- * zmcertmgr may fail if the content is not as expected.
- * It has been tested though that spaces before or after headers do not affect the result.
- * Additional spaces in the base64 content instead cause the verification to fail.
+ * zmcertmgr may fail if the content is not as expected. It has been tested though that spaces
+ * before or after headers do not affect the result. Additional spaces in the base64 content instead
+ * cause the verification to fail.
  */
 public class VerifyCertKey extends AdminDocumentHandler {
 
-  final static String VERIFY_CERT_COMMAND = "verifycrt";
-  final static String CERT_MGR = "/opt/zextras/bin/zmcertmgr";
-  final static String CERT_TYPE_COMM = "comm";
+  static final String VERIFY_CERT_COMMAND = "verifycrt";
+  static final String CERT_MGR = "/opt/zextras/bin/zmcertmgr";
+  static final String CERT_TYPE_COMM = "comm";
 
   private final ProcessStarter processStarter;
-  private final String baseOperationPath;
+  private final Supplier<String> basePathSupplier;
 
-  public VerifyCertKey(ProcessStarter baseProcess, String baseOperationPath) {
+  public VerifyCertKey(ProcessStarter baseProcess, Supplier<String> basePathSupplier) {
     this.processStarter = baseProcess;
-    this.baseOperationPath = baseOperationPath;
+    this.basePathSupplier = basePathSupplier;
   }
 
   /**
    * Handles the request.
    *
-   * @param request {@link Element} representation of {@link com.zimbra.soap.admin.message.VerifyCertKeyRequest}
+   * @param request {@link Element} representation of {@link
+   *     com.zimbra.soap.admin.message.VerifyCertKeyRequest}
    * @param context request context
-   * @return {@link Element} representation of {@link com.zimbra.soap.admin.message.VerifyCertKeyResponse}
+   * @return {@link Element} representation of {@link
+   *     com.zimbra.soap.admin.message.VerifyCertKeyResponse}
    * @throws ServiceException
    */
   @Override
   public Element handle(Element request, Map<String, Object> context) throws ServiceException {
-    ZimbraSoapContext lc = getZimbraSoapContext(context);
+    ZimbraSoapContext zsc = getZimbraSoapContext(context);
+    Element response = zsc.createElement(CertMgrConstants.VERIFY_CERTKEY_RESPONSE);
     String certBuffer = request.getAttribute(CertMgrConstants.E_cert);
     String pvtKeyBuffer = request.getAttribute(CertMgrConstants.A_privkey);
-    Element response = lc.createElement(CertMgrConstants.VERIFY_CERTKEY_RESPONSE);
+
     boolean verifyResult = false;
-    final String tmpPath = baseOperationPath + LdapUtil.generateUUID() + File.separator;
+    final String tmpPath = basePathSupplier.get();
     final String keyFile = tmpPath + ZimbraCertMgrExt.COMM_CRT_KEY_FILE_NAME;
     final String certFile = tmpPath + ZimbraCertMgrExt.COMM_CRT_FILE_NAME;
     final String caFile = tmpPath + ZimbraCertMgrExt.COMM_CRT_CA_FILE_NAME;
@@ -81,24 +84,22 @@ public class VerifyCertKey extends AdminDocumentHandler {
       File comm_path = new File(tmpPath);
       if (!comm_path.exists()) {
         if (!comm_path.mkdirs()) {
-          throw ServiceException.FAILURE(
-              "Cannot create dir " + comm_path.getAbsolutePath(), null);
+          throw ServiceException.FAILURE("Cannot create dir " + comm_path.getAbsolutePath(), null);
         }
       } else if (!comm_path.isDirectory()) {
         throw ServiceException.FAILURE(
-            "Path is not a directory: " + comm_path.getAbsolutePath(),
-            null);
+            "Path is not a directory: " + comm_path.getAbsolutePath(), null);
       }
 
       ByteUtil.putContent(certFile, crtBytes);
       ByteUtil.putContent(caFile, crtBytes);
       ByteUtil.putContent(keyFile, pvtKeyBytes);
 
-      final Process zmCertMgrProcess = processStarter.start(CERT_MGR, VERIFY_CERT_COMMAND,
-          CERT_TYPE_COMM,
-          keyFile, certFile, caFile);
-      verifyResult = this.verifyCrtCommandResult(
-          new String(zmCertMgrProcess.getInputStream().readAllBytes()));
+      final Process zmCertMgrProcess =
+          processStarter.start(
+              CERT_MGR, VERIFY_CERT_COMMAND, CERT_TYPE_COMM, keyFile, certFile, caFile);
+      verifyResult =
+          this.verifyCrtCommandResult(new String(zmCertMgrProcess.getInputStream().readAllBytes()));
       ZimbraLog.security.info(" GetVerifyCertResponse:" + verifyResult);
 
       File comm_priv = new File(keyFile);
@@ -121,8 +122,8 @@ public class VerifyCertKey extends AdminDocumentHandler {
     } catch (SecurityException se) {
       ZimbraLog.security.error("File(s) of commercial certificates/prvkey was not deleted", se);
     } catch (IOException ioe) {
-      throw ServiceException.FAILURE("IOException occurred while running cert verification command",
-          ioe);
+      throw ServiceException.FAILURE(
+          "IOException occurred while running cert verification command", ioe);
     }
 
     response.addAttribute(CertMgrConstants.A_verifyResult, verifyResult);
@@ -163,7 +164,4 @@ public class VerifyCertKey extends AdminDocumentHandler {
   private boolean verifyCrtCommandResult(String commandResult) {
     return !StringUtils.containsIgnoreCase(commandResult, "error");
   }
-
 }
-
-
