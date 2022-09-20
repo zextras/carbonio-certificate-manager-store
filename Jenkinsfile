@@ -1,5 +1,5 @@
 def mvnCmd(String cmd) {
-  sh 'mvn -s settings.xml ' + cmd
+  sh 'mvn -B -s settings.xml ' + cmd
 }
 
 pipeline {
@@ -44,4 +44,3 @@ pipeline {
         }
     }
 }
-
