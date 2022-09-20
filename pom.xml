@@ -14,6 +14,15 @@
     <maven.compiler.target>11</maven.compiler.target>
     <carbonio.version>22.8.0</carbonio.version>
     <snapshot></snapshot>
+    <junit.version>4.8.2</junit.version>
+    <mockito.version>4.4.0</mockito.version>
+    <javax.servlet.version>3.1.0</javax.servlet.version>
+    <dom4j.version>2.1.1</dom4j.version>
+    <guava.version>28.1-jre</guava.version>
+    <apache.httpclient.version>4.5.13</apache.httpclient.version>
+    <apache.httpcore.version>4.4.11</apache.httpcore.version>
+    <commons-io.version>1.4</commons-io.version>
+    <commons-lang.version>2.6</commons-lang.version>
   </properties>
 
   <profiles>
@@ -61,47 +70,49 @@
     <dependency>
       <groupId>junit</groupId>
       <artifactId>junit</artifactId>
-      <version>4.8.2</version>
+      <version>${junit.version}</version>
+      <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>org.mockito</groupId>
       <artifactId>mockito-core</artifactId>
-      <version>4.4.0</version>
+      <version>${mockito.version}</version>
+      <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>javax.servlet</groupId>
       <artifactId>javax.servlet-api</artifactId>
-      <version>3.1.0</version>
+      <version>${javax.servlet.version}</version>
     </dependency>
     <dependency>
       <groupId>org.dom4j</groupId>
       <artifactId>dom4j</artifactId>
-      <version>2.1.1</version>
+      <version>${dom4j.version}</version>
     </dependency>
     <dependency>
       <groupId>com.google.guava</groupId>
       <artifactId>guava</artifactId>
-      <version>28.1-jre</version>
+      <version>${guava.version}</version>
     </dependency>
     <dependency>
       <groupId>org.apache.httpcomponents</groupId>
       <artifactId>httpclient</artifactId>
-      <version>4.5.13</version>
+      <version>${apache.httpclient.version}</version>
     </dependency>
     <dependency>
       <groupId>org.apache.httpcomponents</groupId>
       <artifactId>httpcore</artifactId>
-      <version>4.4.11</version>
+      <version>${apache.httpcore.version}</version>
     </dependency>
     <dependency>
       <groupId>commons-io</groupId>
       <artifactId>commons-io</artifactId>
-      <version>1.4</version>
+      <version>${commons-io.version}</version>
     </dependency>
     <dependency>
       <groupId>commons-lang</groupId>
       <artifactId>commons-lang</artifactId>
-      <version>2.6</version>
+      <version>${commons-lang.version}</version>
     </dependency>
     <dependency>
       <groupId>zimbra</groupId>
