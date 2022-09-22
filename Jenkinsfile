@@ -11,7 +11,6 @@ pipeline {
     environment {
         JAVA_OPTS = '-Dfile.encoding=UTF8'
         LC_ALL = 'C.UTF-8'
-        ARTIFACTORY_ACCESS=credentials('artifactory-jenkins-gradle-properties-splitted')
         jenkins_build = 'true'
     }
     options {
