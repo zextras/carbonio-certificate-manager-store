@@ -45,13 +45,22 @@
         </repository>
       </repositories>
     </profile>
+    <profile>
+      <id>prod</id>
+      <distributionManagement>
+        <repository>
+          <id>artifactory</id>
+          <url>https://zextras.jfrog.io/artifactory/public-maven-repo</url>
+        </repository>
+      </distributionManagement>
+    </profile>
   </profiles>
 
   <distributionManagement>
-    <repository>
-      <id>zextras-java-sdk</id>
-      <url>https://zextras.jfrog.io/artifactory/public-maven-repo</url>
-    </repository>
+    <snapshotRepository>
+      <id>artifactory</id>
+      <url>https://zextras.jfrog.io/artifactory/maven-snapshot</url>
+    </snapshotRepository>
   </distributionManagement>
 
   <repositories>
