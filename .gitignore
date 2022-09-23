@@ -4,3 +4,5 @@
 build
 .classpath
 .idea
+.ivy2
+/target/
