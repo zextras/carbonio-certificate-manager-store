@@ -30,7 +30,7 @@ import org.junit.Test;
 import org.junit.rules.ExpectedException;
 import org.junit.rules.TemporaryFolder;
 
-public class VerifyCertKeyTest {
+public class VerifyCertKeyIT {
 
   @Rule public TemporaryFolder testFolder = new TemporaryFolder();
 
