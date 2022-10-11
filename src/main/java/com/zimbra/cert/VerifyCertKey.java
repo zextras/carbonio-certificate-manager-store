@@ -16,6 +16,7 @@ import com.zimbra.soap.ZimbraSoapContext;
 import java.io.File;
 import java.io.IOException;
 import java.util.Map;
+import java.util.Objects;
 import java.util.function.Supplier;
 import org.apache.commons.lang.StringUtils;
 
@@ -60,6 +61,10 @@ public class VerifyCertKey extends AdminDocumentHandler {
     Element response = zsc.createElement(CertMgrConstants.VERIFY_CERTKEY_RESPONSE);
     String certBuffer = request.getAttribute(CertMgrConstants.E_cert);
     String pvtKeyBuffer = request.getAttribute(CertMgrConstants.A_privkey);
+    String certificateChain = request.getAttribute(CertMgrConstants.A_ca, "");
+    if (Objects.isNull(certificateChain) || Objects.equals("", certificateChain)) {
+      certificateChain = certBuffer;
+    }
 
     boolean verifyResult = false;
     final String tmpPath = basePathSupplier.get();
@@ -71,6 +76,7 @@ public class VerifyCertKey extends AdminDocumentHandler {
       // replace the space character with '\n'
       String sanitizedCrt = formatValidContent(certBuffer);
       String sanitizedPvtKey = formatValidContent(pvtKeyBuffer);
+      String sanitizedCertChain = formatValidContent(certificateChain);
 
       if (sanitizedCrt.length() == 0 || sanitizedPvtKey.length() == 0) {
         response.addAttribute(CertMgrConstants.A_verifyResult, "invalid");
@@ -79,6 +85,7 @@ public class VerifyCertKey extends AdminDocumentHandler {
 
       // store pvt key, crt and ca in a temporary file
       byte[] crtBytes = sanitizedCrt.getBytes();
+      byte[] crtChainBytes = sanitizedCertChain.getBytes();
       byte[] pvtKeyBytes = sanitizedPvtKey.getBytes();
 
       File comm_path = new File(tmpPath);
@@ -92,15 +99,20 @@ public class VerifyCertKey extends AdminDocumentHandler {
       }
 
       ByteUtil.putContent(certFile, crtBytes);
-      ByteUtil.putContent(caFile, crtBytes);
+      ByteUtil.putContent(caFile, crtChainBytes);
       ByteUtil.putContent(keyFile, pvtKeyBytes);
 
       final Process zmCertMgrProcess =
           processStarter.start(
               CERT_MGR, VERIFY_CERT_COMMAND, CERT_TYPE_COMM, keyFile, certFile, caFile);
-      verifyResult =
-          this.verifyCrtCommandResult(new String(zmCertMgrProcess.getInputStream().readAllBytes()));
-      ZimbraLog.security.info(" GetVerifyCertResponse:" + verifyResult);
+      final String verifyCrtKeyCmdResult =
+          new String(zmCertMgrProcess.getInputStream().readAllBytes());
+      verifyResult = this.verifyCrtCommandResult(verifyCrtKeyCmdResult);
+      ZimbraLog.security.info(
+          " GetVerifyCertResponse:"
+              + verifyResult
+              + ". Command result was: "
+              + verifyCrtKeyCmdResult);
 
       File comm_priv = new File(keyFile);
       if (!comm_priv.delete()) {
