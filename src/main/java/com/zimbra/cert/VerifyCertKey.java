@@ -105,9 +105,14 @@ public class VerifyCertKey extends AdminDocumentHandler {
       final Process zmCertMgrProcess =
           processStarter.start(
               CERT_MGR, VERIFY_CERT_COMMAND, CERT_TYPE_COMM, keyFile, certFile, caFile);
-      verifyResult =
-          this.verifyCrtCommandResult(new String(zmCertMgrProcess.getInputStream().readAllBytes()));
-      ZimbraLog.security.info(" GetVerifyCertResponse:" + verifyResult);
+      final String verifyCrtKeyCmdResult =
+          new String(zmCertMgrProcess.getInputStream().readAllBytes());
+      verifyResult = this.verifyCrtCommandResult(verifyCrtKeyCmdResult);
+      ZimbraLog.security.info(
+          " GetVerifyCertResponse:"
+              + verifyResult
+              + ". Command result was: "
+              + verifyCrtKeyCmdResult);
 
       File comm_priv = new File(keyFile);
       if (!comm_priv.delete()) {
