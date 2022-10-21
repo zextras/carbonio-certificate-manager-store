@@ -19,6 +19,8 @@ import com.zimbra.soap.ZimbraSoapContext;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
@@ -173,5 +175,75 @@ public class VerifyCertKeyTest {
             + "-----END CERTIFICATE-----"
             + System.lineSeparator();
     assertFalse(Objects.equals(expectedContent, verifyCertKey.formatValidContent(content)));
+  }
+
+  @Test
+  public void shouldMatchChainContentWhenWritingToFile() throws Exception {
+    // mock process so request does not break
+    final ProcessStarter processStarter = mock(ProcessStarter.class);
+    final VerifyCertKey verifyCertKey =
+        new VerifyCertKey(processStarter, this::getBaseOperationPath);
+    final Process processMock = mock(Process.class);
+    when(processStarter.start(any())).thenReturn(processMock);
+    final String caContent = "winds of chain";
+    // assert here, because verifycertkey deletes file in mid of call
+    when(processMock.waitFor())
+        .then(
+            x -> {
+              final File caFile =
+                  new File(this.getBaseOperationPath() + ZimbraCertMgrExt.COMM_CRT_CA_FILE_NAME);
+              assertEquals(caContent, Files.readString(Path.of(caFile.getAbsolutePath())));
+              return true;
+            });
+    final ByteArrayInputStream mockProcessResult =
+        new ByteArrayInputStream("The process went smooth".getBytes(StandardCharsets.UTF_8));
+    when(processMock.getInputStream()).thenReturn(mockProcessResult);
+
+    // prepare request
+    Map<String, Object> context = new HashMap<String, Object>();
+    ZimbraSoapContext zsc =
+        new ZimbraSoapContext(mock(AuthToken.class), "1", SoapProtocol.Soap12, SoapProtocol.Soap12);
+    context.put(SoapEngine.ZIMBRA_CONTEXT, zsc);
+    final XMLElement request = new XMLElement(VERIFY_CERTKEY_REQUEST);
+    request.addUniqueElement(CertMgrConstants.E_cert).addText("test");
+    request.addUniqueElement(CertMgrConstants.A_privkey).addText("Super private key");
+    request.addUniqueElement(CertMgrConstants.A_ca).addText(caContent);
+    verifyCertKey.handle(request, context);
+  }
+
+  @Test
+  public void shouldMatchCertContentWhenWritingToFile() throws Exception {
+    // mock process so request does not break
+    final ProcessStarter processStarter = mock(ProcessStarter.class);
+    final VerifyCertKey verifyCertKey =
+        new VerifyCertKey(processStarter, this::getBaseOperationPath);
+    final Process processMock = mock(Process.class);
+    when(processStarter.start(any())).thenReturn(processMock);
+    final String certContent = "Certificate with chain";
+    // assert here, because verifycertkey deletes file in mid of call
+    when(processMock.waitFor())
+        .then(
+            x -> {
+              final File caFile =
+                  new File(this.getBaseOperationPath() + ZimbraCertMgrExt.COMM_CRT_CA_FILE_NAME);
+              final File certFile =
+                  new File(this.getBaseOperationPath() + ZimbraCertMgrExt.COMM_CRT_FILE_NAME);
+              assertEquals(certContent, Files.readString(Path.of(certFile.getAbsolutePath())));
+              assertEquals(certContent, Files.readString(Path.of(caFile.getAbsolutePath())));
+              return true;
+            });
+    final ByteArrayInputStream mockProcessResult =
+        new ByteArrayInputStream("The process went smooth".getBytes(StandardCharsets.UTF_8));
+    when(processMock.getInputStream()).thenReturn(mockProcessResult);
+
+    // prepare request
+    Map<String, Object> context = new HashMap<String, Object>();
+    ZimbraSoapContext zsc =
+        new ZimbraSoapContext(mock(AuthToken.class), "1", SoapProtocol.Soap12, SoapProtocol.Soap12);
+    context.put(SoapEngine.ZIMBRA_CONTEXT, zsc);
+    final XMLElement request = new XMLElement(VERIFY_CERTKEY_REQUEST);
+    request.addUniqueElement(CertMgrConstants.E_cert).addText(certContent);
+    request.addUniqueElement(CertMgrConstants.A_privkey).addText("Super private key");
+    verifyCertKey.handle(request, context);
   }
 }
