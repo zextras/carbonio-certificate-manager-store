@@ -5,14 +5,14 @@
 
   <groupId>zimbra</groupId>
   <artifactId>zm-certificate-manager-store</artifactId>
-  <version>22.11.0${snapshot}</version>
+  <version>22.12.0${snapshot}</version>
   <modelVersion>4.0.0</modelVersion>
   <packaging>jar</packaging>
 
   <properties>
     <maven.compiler.source>11</maven.compiler.source>
     <maven.compiler.target>11</maven.compiler.target>
-    <carbonio.version>22.11.0</carbonio.version>
+    <mailbox.version>22.12.0-SNAPSHOT</mailbox.version>
     <snapshot></snapshot>
     <junit.version>4.8.2</junit.version>
     <mockito.version>4.4.0</mockito.version>
@@ -35,16 +35,6 @@
       <properties>
         <snapshot>-SNAPSHOT</snapshot>
       </properties>
-      <repositories>
-        <repository>
-          <id>zextras-snapshots-repo</id>
-          <name>Zextras Snapshots Repo</name>
-          <url>https://zextras.jfrog.io/artifactory/maven-snapshot</url>
-          <snapshots>
-            <enabled>true</enabled>
-          </snapshots>
-        </repository>
-      </repositories>
     </profile>
     <profile>
       <id>prod</id>
@@ -72,6 +62,14 @@
     <repository>
       <id>zextras-java-sdk</id>
       <url>https://zextras.jfrog.io/artifactory/public-maven-repo</url>
+    </repository>
+    <repository>
+      <id>zextras-snapshots-repo</id>
+      <name>Zextras Snapshots Repo</name>
+      <url>https://zextras.jfrog.io/artifactory/maven-snapshot</url>
+      <snapshots>
+        <enabled>true</enabled>
+      </snapshots>
     </repository>
     <repository>
       <id>maven-redhat</id>
@@ -131,24 +129,24 @@
       <version>${commons-lang.version}</version>
     </dependency>
     <dependency>
-      <groupId>zimbra</groupId>
+      <groupId>zextras</groupId>
       <artifactId>zm-client</artifactId>
-      <version>${carbonio.version}</version>
+      <version>22.11.0-SNAPSHOT</version>
     </dependency>
     <dependency>
-      <groupId>zimbra</groupId>
+      <groupId>zextras</groupId>
       <artifactId>zm-common</artifactId>
-      <version>${carbonio.version}</version>
+      <version>${mailbox.version}</version>
     </dependency>
     <dependency>
-      <groupId>zimbra</groupId>
+      <groupId>zextras</groupId>
       <artifactId>zm-soap</artifactId>
-      <version>${carbonio.version}</version>
+      <version>22.11.0-SNAPSHOT</version>
     </dependency>
     <dependency>
-      <groupId>zimbra</groupId>
+      <groupId>zextras</groupId>
       <artifactId>zm-store</artifactId>
-      <version>${carbonio.version}</version>
+      <version>22.11.0-SNAPSHOT</version>
       <exclusions>
         <!-- This package version in zm-store holds broken dependencies (zookeeper) -->
         <exclusion>
