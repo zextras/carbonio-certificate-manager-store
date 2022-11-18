@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: AGPL-3.0-only
 
-package unittest;
+package qa.unittest;
 
 import com.zimbra.cert.ZimbraCertMgrExt;
 import com.zimbra.client.ZMailbox;
