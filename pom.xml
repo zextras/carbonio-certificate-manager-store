@@ -60,7 +60,7 @@
       <url>https://repo.maven.apache.org/maven2</url>
     </repository>
     <repository>
-      <id>zextras-java-sdk</id>
+      <id>artifactory</id>
       <url>https://zextras.jfrog.io/artifactory/public-maven-repo</url>
     </repository>
     <repository>
