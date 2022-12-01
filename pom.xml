@@ -4,9 +4,9 @@
   xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 
   <parent>
-    <artifactId>zm-mailbox</artifactId>
     <groupId>zextras</groupId>
-    <version>22.12.0-SNAPSHOT</version>
+    <artifactId>zm-mailbox</artifactId>
+    <version>23.1.0-SNAPSHOT</version>
   </parent>
 
   <groupId>zimbra</groupId>
@@ -73,6 +73,9 @@
       <snapshots>
         <enabled>true</enabled>
       </snapshots>
+      <releases>
+        <enabled>false</enabled>
+      </releases>
     </repository>
     <repository>
       <id>maven-redhat</id>
