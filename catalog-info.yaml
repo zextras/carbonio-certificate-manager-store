@@ -15,3 +15,5 @@ spec:
   type: library
   lifecycle: production
   owner: new-bacon-monsters
+  dependsOn:
+    - component:carbonio-mailbox
