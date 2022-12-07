@@ -1,0 +1,19 @@
+# see https://backstage.io/docs/features/software-catalog/descriptor-format#kind-component for more component conf info
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: carbonio-certificate-manager-store
+  title: Carbonio Certificate Manager Store
+  description: Mailbox' extension to manage certificates
+  annotations:
+    backstage.io/techdocs-ref: dir:.
+  tags:
+    - java
+    - maven
+    - github
+spec:
+  type: library
+  lifecycle: production
+  owner: new-bacon-monsters
+  dependsOn:
+    - component:carbonio-mailbox
