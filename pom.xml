@@ -32,31 +32,6 @@
     <jacoco-maven-plugin.version>0.8.8</jacoco-maven-plugin.version>
   </properties>
 
-  <profiles>
-    <profile>
-      <id>dev</id>
-      <properties>
-        <snapshot>-SNAPSHOT</snapshot>
-      </properties>
-    </profile>
-    <profile>
-      <id>prod</id>
-      <distributionManagement>
-        <repository>
-          <id>artifactory</id>
-          <url>https://zextras.jfrog.io/artifactory/public-maven-repo</url>
-        </repository>
-      </distributionManagement>
-    </profile>
-  </profiles>
-
-  <distributionManagement>
-    <snapshotRepository>
-      <id>artifactory</id>
-      <url>https://zextras.jfrog.io/artifactory/maven-snapshot</url>
-    </snapshotRepository>
-  </distributionManagement>
-
   <repositories>
     <repository>
       <id>maven</id>
