@@ -6,6 +6,7 @@ registries:
 updates:
   - package-ecosystem: "maven"
     directory: "/"
+    target-branch: "chore/dependabot"
     registries:
       - jfrog
     schedule:
