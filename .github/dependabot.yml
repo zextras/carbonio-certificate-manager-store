@@ -1,0 +1,12 @@
+version: 2
+registries:
+  jfrog:
+    type: maven-repository
+    url: https://zextras.jfrog.io/artifactory
+updates:
+  - package-ecosystem: "maven"
+    directory: "/"
+    registries:
+      - jfrog
+    schedule:
+      interval: "daily"
