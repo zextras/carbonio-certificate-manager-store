@@ -12,7 +12,6 @@ import com.zimbra.cs.ldap.LdapUtil;
 import com.zimbra.soap.DocumentDispatcher;
 import com.zimbra.soap.DocumentService;
 import java.io.File;
-import java.util.UUID;
 
 
 public class ZimbraCertMgrService implements DocumentService {
@@ -20,6 +19,7 @@ public class ZimbraCertMgrService implements DocumentService {
     public void registerHandlers(DocumentDispatcher dispatcher) {
         dispatcher.registerHandler(CertMgrConstants.INSTALL_CERT_REQUEST, new InstallCert());
         dispatcher.registerHandler(CertMgrConstants.GET_CERT_REQUEST, new GetCert());
+        dispatcher.registerHandler(CertMgrConstants.GET_DOMAIN_CERT_REQUEST, new GetDomainCert());
         dispatcher.registerHandler(CertMgrConstants.GEN_CSR_REQUEST, new GenerateCSR());
         dispatcher.registerHandler(CertMgrConstants.GET_CSR_REQUEST, new GetCSR());
 	    dispatcher.registerHandler(CertMgrConstants.VERIFY_CERTKEY_REQUEST, new VerifyCertKey(
