@@ -25,26 +25,25 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
- * Admin Handler class to get information about a domain certificate.
- * It provides a way to access all needed attributes of X.509 certificate using
- * a standard java.security.cert package.
+ * Admin Handler class to get information about a domain certificate. It provides a way to access
+ * all needed attributes of X.509 certificate using a standard java.security.cert package.
  */
 public class GetDomainCert extends AdminDocumentHandler {
 
   private static final String CERT_TYPE = "X.509";
   private static final String DATE_PATTERN = "MMM dd yyyy HH:mm:ss z";
 
-   /**
-   * Handles the request. Searches a domain by name, checks admin rights
-   * (accessible to global and delegated admin of requested domain), decrypts X.509 certificate,
-   * creates response element.
+  /**
+   * Handles the request. Searches a domain by name, checks admin rights (accessible to global and
+   * delegated admin of requested domain), decrypts X.509 certificate, creates response element.
    *
    * @param request {@link Element} representation of {@link
    *     com.zimbra.soap.admin.message.GetDomainCertRequest}
    * @param context request context
    * @return {@link Element} representation of {@link
    *     com.zimbra.soap.admin.message.GetDomainCertResponse}
-   * @throws ServiceException
+   * @throws ServiceException in case if a requested domain could not be found or if an error occurs
+   *     during certificate parsing.
    */
   @Override
   public Element handle(Element request, Map<String, Object> context) throws ServiceException {
