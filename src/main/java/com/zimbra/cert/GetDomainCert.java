@@ -7,7 +7,7 @@ import com.zimbra.common.soap.CertMgrConstants;
 import com.zimbra.common.soap.Element;
 import com.zimbra.cs.account.Domain;
 import com.zimbra.cs.account.Provisioning;
-import com.zimbra.cs.account.accesscontrol.AdminRight;
+import com.zimbra.cs.account.accesscontrol.Rights.Admin;
 import com.zimbra.cs.service.admin.AdminDocumentHandler;
 import com.zimbra.soap.ZimbraSoapContext;
 import java.io.ByteArrayInputStream;
@@ -21,18 +21,34 @@ import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Map;
+import java.util.stream.Collectors;
 
-
+/**
+ * Admin Handler class to get information about a domain certificate.
+ * It provides a way to access all needed attributes of X.509 certificate using
+ * a standard java.security.cert package.
+ */
 public class GetDomainCert extends AdminDocumentHandler {
 
   private static final String CERT_TYPE = "X.509";
   private static final String DATE_PATTERN = "MMM dd yyyy HH:mm:ss z";
 
+   /**
+   * Handles the request. Searches a domain by name, checks admin rights
+   * (accessible to global and delegated admin of requested domain), decrypts X.509 certificate,
+   * creates response element.
+   *
+   * @param request {@link Element} representation of {@link
+   *     com.zimbra.soap.admin.message.GetDomainCertRequest}
+   * @param context request context
+   * @return {@link Element} representation of {@link
+   *     com.zimbra.soap.admin.message.GetDomainCertResponse}
+   * @throws ServiceException
+   */
   @Override
-
   public Element handle(Element request, Map<String, Object> context) throws ServiceException {
 
-    ZimbraSoapContext lc = getZimbraSoapContext(context);
+    ZimbraSoapContext zsc = getZimbraSoapContext(context);
 
     Provisioning prov = Provisioning.getInstance();
     String domainName = request.getAttribute(AdminConstants.A_DOMAIN);
@@ -43,16 +59,17 @@ public class GetDomainCert extends AdminDocumentHandler {
           "Domain with name " + domainName + " could not be found", null);
     }
 
-    checkDomainRight(lc, domain, AdminRight.PR_ALWAYS_ALLOW);
+    checkDomainRight(zsc, domain, Admin.R_getDomain);
 
-    Element response = lc.createElement(CertMgrConstants.GET_DOMAIN_CERT_RESPONSE);
-    Element certElement = response
-        .addNonUniqueElement(CertMgrConstants.E_cert)
-        .addAttribute(AdminConstants.A_DOMAIN, domainName);
+    Element response = zsc.createElement(CertMgrConstants.GET_DOMAIN_CERT_RESPONSE);
+    Element certElement =
+        response
+            .addNonUniqueElement(CertMgrConstants.E_cert)
+            .addAttribute(AdminConstants.A_DOMAIN, domainName);
 
     try (InputStream inStream = new ByteArrayInputStream(domain.getSSLCertificate().getBytes())) {
       CertificateFactory cf = CertificateFactory.getInstance(CERT_TYPE);
-      X509Certificate cert = (X509Certificate)cf.generateCertificate(inStream);
+      X509Certificate cert = (X509Certificate) cf.generateCertificate(inStream);
 
       addCertInfo(certElement, cert);
     } catch (IOException | CertificateException e) {
@@ -64,14 +81,18 @@ public class GetDomainCert extends AdminDocumentHandler {
 
   private void addCertInfo(Element certElement, X509Certificate cert)
       throws CertificateParsingException {
-    addChildElement(certElement, CertMgrConstants.E_SUBJECT, cert.getSubjectX500Principal().getName());
-    addChildElement(certElement, CertMgrConstants.E_SUBJECT_ALT_NAME, cert.getSubjectAlternativeNames().toString());
-    addChildElement(certElement, CertMgrConstants.E_ISSUER, cert.getIssuerX500Principal().getName());
-    addChildElement(certElement, CertMgrConstants.E_NOT_BEFORE, formatDate(cert.getNotBefore()));
-    addChildElement(certElement, CertMgrConstants.E_NOT_AFTER, formatDate(cert.getNotAfter()));
+    addChildElem(certElement, CertMgrConstants.E_SUBJECT, cert.getSubjectX500Principal().getName());
+    addChildElem(certElement, CertMgrConstants.E_SUBJECT_ALT_NAME,
+        cert.getSubjectAlternativeNames()
+            .stream()
+            .map(list -> list.get(1).toString())
+            .collect(Collectors.joining(", ")));
+    addChildElem(certElement, CertMgrConstants.E_ISSUER, cert.getIssuerX500Principal().getName());
+    addChildElem(certElement, CertMgrConstants.E_NOT_BEFORE, formatDate(cert.getNotBefore()));
+    addChildElem(certElement, CertMgrConstants.E_NOT_AFTER, formatDate(cert.getNotAfter()));
   }
 
-  private void addChildElement(Element parentElement, String name, String value) {
+  private void addChildElem(Element parentElement, String name, String value) {
     Element childElement = parentElement.addNonUniqueElement(name);
     childElement.setText(value);
   }
