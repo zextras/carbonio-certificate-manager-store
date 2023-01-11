@@ -5,6 +5,7 @@ import com.zimbra.common.service.ServiceException;
 import com.zimbra.common.soap.AdminConstants;
 import com.zimbra.common.soap.CertMgrConstants;
 import com.zimbra.common.soap.Element;
+import com.zimbra.common.util.ZimbraLog;
 import com.zimbra.cs.account.Domain;
 import com.zimbra.cs.account.Provisioning;
 import com.zimbra.cs.account.accesscontrol.Rights.Admin;
@@ -56,7 +57,7 @@ public class GetDomainCert extends AdminDocumentHandler {
 
     if (domain == null) {
       throw ServiceException.INVALID_REQUEST(
-          "Domain with name " + domainName + " could not be found", null);
+          "Domain with name " + domainName + " could not be found.", null);
     }
 
     checkDomainRight(zsc, domain, Admin.R_getDomain);
@@ -70,6 +71,8 @@ public class GetDomainCert extends AdminDocumentHandler {
     try (InputStream inStream = new ByteArrayInputStream(domain.getSSLCertificate().getBytes())) {
       CertificateFactory cf = CertificateFactory.getInstance(CERT_TYPE);
       X509Certificate cert = (X509Certificate) cf.generateCertificate(inStream);
+
+      ZimbraLog.security.info("Parsing the cert info for domain: " + domainName);
 
       addCertInfo(certElement, cert);
     } catch (IOException | CertificateException e) {
