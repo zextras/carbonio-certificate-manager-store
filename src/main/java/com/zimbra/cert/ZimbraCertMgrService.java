@@ -5,7 +5,7 @@
 
 package com.zimbra.cert;
 
-import com.zimbra.cert.util.ProcessStarterProvider;
+import com.zimbra.cert.util.processstarter.ProcessStarterProvider;
 import com.zimbra.common.localconfig.LC;
 import com.zimbra.common.soap.CertMgrConstants;
 import com.zimbra.cs.ldap.LdapUtil;
