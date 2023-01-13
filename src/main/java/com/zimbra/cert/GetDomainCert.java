@@ -9,7 +9,6 @@ import com.zimbra.common.soap.Element;
 import com.zimbra.common.util.ZimbraLog;
 import com.zimbra.cs.account.Domain;
 import com.zimbra.cs.account.Provisioning;
-import com.zimbra.cs.account.accesscontrol.Rights.Admin;
 import com.zimbra.cs.account.accesscontrol.generated.AdminRights;
 import com.zimbra.cs.service.admin.AdminDocumentHandler;
 import com.zimbra.soap.ZimbraSoapContext;
