@@ -10,6 +10,7 @@ import com.zimbra.common.util.ZimbraLog;
 import com.zimbra.cs.account.Domain;
 import com.zimbra.cs.account.Provisioning;
 import com.zimbra.cs.account.accesscontrol.Rights.Admin;
+import com.zimbra.cs.account.accesscontrol.generated.AdminRights;
 import com.zimbra.cs.service.admin.AdminDocumentHandler;
 import com.zimbra.soap.ZimbraSoapContext;
 import java.security.cert.X509Certificate;
@@ -60,7 +61,7 @@ public class GetDomainCert extends AdminDocumentHandler {
           "Certificate for Domain with id " + domainId + " could not be found.", null);
     }
 
-    checkDomainRight(zsc, domain, Admin.R_getDomain);
+    checkDomainRight(zsc, domain, AdminRights.R_getDomain);
 
     X509Certificate x509Certificate =
         X509CertificateParser.generateCertificate(domain.getSSLCertificate().getBytes());

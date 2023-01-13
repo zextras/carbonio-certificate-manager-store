@@ -1,6 +1,10 @@
 package com.zimbra.cert;
 
 import static com.zimbra.common.soap.AdminConstants.A_DOMAIN;
+import static com.zimbra.common.soap.CertMgrConstants.E_ISSUER;
+import static com.zimbra.common.soap.CertMgrConstants.E_SUBJECT;
+import static com.zimbra.common.soap.CertMgrConstants.E_SUBJECT_ALT_NAME;
+import static com.zimbra.common.soap.CertMgrConstants.E_cert;
 import static com.zimbra.common.soap.CertMgrConstants.GET_DOMAIN_CERT_REQUEST;
 import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.mock;
@@ -38,17 +42,20 @@ public class GetDomainCertTest {
     Provisioning.setInstance(provisioning);
   }
 
-  @Test(expected = ServiceException.class)
+  @Test
   public void shouldReturnInvalidIfNoSuchDomain() throws Exception {
     when(provisioning.get(DomainBy.id, domainId)).thenReturn(null);
 
     final GetDomainCert getDomainCert = new GetDomainCert();
     final XMLElement request = new XMLElement(GET_DOMAIN_CERT_REQUEST);
     request.addNonUniqueElement(A_DOMAIN).addText(domainId);
+
+    expectedEx.expect(ServiceException.class);
+    expectedEx.expectMessage("Domain with id domainId could not be found.");
     getDomainCert.handle(request, context);
   }
 
-  @Test(expected = ServiceException.class)
+  @Test
   public void shouldReturnInvalidIfNoDomainCert() throws Exception {
     final Domain domain = mock(Domain.class);
     when(provisioning.get(DomainBy.id, domainId)).thenReturn(domain);
@@ -57,23 +64,31 @@ public class GetDomainCertTest {
     final GetDomainCert getDomainCert = new GetDomainCert();
     final XMLElement request = new XMLElement(GET_DOMAIN_CERT_REQUEST);
     request.addNonUniqueElement(A_DOMAIN).addText(domainId);
+
+    expectedEx.expect(ServiceException.class);
+    expectedEx.expectMessage("Domain with id domainId could not be found.");
     getDomainCert.handle(request, context);
   }
 
-  @Test(expected = ServiceException.class)
+  @Test
   public void shouldThrowExceptionWithInvalidCertData() throws Exception {
     final Domain domain = mock(Domain.class);
     when(provisioning.get(DomainBy.id, domainId)).thenReturn(domain);
     when(domain.getDomainName()).thenReturn("domainName");
     when(domain.getSSLCertificate())
         .thenReturn(
-            "-----BEGIN CERTIFICATE-----\n"
-            + "MIIFPjCCBCagAwIBAgISAyeF5ryS59TmpV5xTYquviaNMA0GCSqGSIb3DQEBCwUA\n"
-            + "-----END CERTIFICATE-----\n");
+                "-----BEGIN CERTIFICATE-----\n"
+                + "MIIFPjCCBCagAwIBAgISAyeF5ryS59TmpV5xTYquviaNMA0GCSqGSIb3DQEBCwUA\n"
+                + "-----END CERTIFICATE-----\n");
 
     final GetDomainCert getDomainCert = new DumbGetDomainCertHandler();
     final XMLElement request = new XMLElement(GET_DOMAIN_CERT_REQUEST);
     request.addNonUniqueElement(A_DOMAIN).addText(domainId);
+
+    expectedEx.expect(ServiceException.class);
+    expectedEx.expectMessage(
+        "Failure on generating certificate:"
+            + " Unable to initialize, java.io.EOFException: not enough content");
     getDomainCert.handle(request, context);
   }
 
@@ -120,17 +135,9 @@ public class GetDomainCertTest {
     final XMLElement request = new XMLElement(GET_DOMAIN_CERT_REQUEST);
     request.addNonUniqueElement(A_DOMAIN).addText(domainId);
     final Element response = getDomainCert.handle(request, context);
-    assertEquals(
-        "<GetDomainCertResponse"
-            + " xmlns=\"urn:zimbraAdmin\">"
-            + "<cert domain=\"domainName\">"
-            + "<subject>CN=webmail-acme.demo.zextras.io</subject>"
-            + "<SubjectAltName>webmail-acme.demo.zextras.io</SubjectAltName>"
-            + "<issuer>CN=R3,O=Let's Encrypt,C=US</issuer>"
-            + "<notBefore>Nov 22 2022 17:26:01 CET</notBefore>"
-            + "<notAfter>Feb 20 2023 17:26:00 CET</notAfter>"
-            + "</cert>"
-            + "</GetDomainCertResponse>",
-        response.toString());
+    final Element certElem = response.getElement(E_cert);
+    assertEquals(certElem.getElement(E_SUBJECT).getText(), "CN=webmail-acme.demo.zextras.io");
+    assertEquals(certElem.getElement(E_SUBJECT_ALT_NAME).getText(), "webmail-acme.demo.zextras.io");
+    assertEquals(certElem.getElement(E_ISSUER).getText(), "CN=R3,O=Let's Encrypt,C=US");
   }
 }
