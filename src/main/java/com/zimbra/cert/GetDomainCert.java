@@ -61,10 +61,11 @@ public class GetDomainCert extends AdminDocumentHandler {
     }
 
     checkDomainRight(zsc, domain, Admin.R_getDomain);
-    ZimbraLog.security.info("Parsing the cert info for domain: " + domainId);
 
     X509Certificate x509Certificate = X509CertificateParser.generateCertificate(
         domain.getSSLCertificate().getBytes());
+
+    ZimbraLog.security.info("Parsing the cert info for domain: " + domainId);
 
     Element response = zsc.createElement(CertMgrConstants.GET_DOMAIN_CERT_RESPONSE);
 
