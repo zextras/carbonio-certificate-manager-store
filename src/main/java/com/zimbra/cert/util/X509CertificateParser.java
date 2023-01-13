@@ -13,8 +13,9 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 /**
- * Helper util class for X509 certificate operations. It provides a way to access
- * all needed attributes of X.509 certificate using a standard java.security.cert package.
+ * Helper util class for X509 certificate operations. It provides a way to access all needed
+ * attributes of X.509 certificate using a standard java.security.cert package.
+ *
  * @author Yuliya Aheeva
  * @since 23.2.0
  */
@@ -26,7 +27,9 @@ public class X509CertificateParser {
   }
 
   /**
-   * Generates a certificate object and initializes it with the data read from the input stream inStream.
+   * Generates a certificate object and initializes it with the data read from the input stream
+   * inStream.
+   *
    * @param certificate byte array certificate representation.
    * @return {@link X509Certificate} X509Certificate object.
    * @throws ServiceException if an error occurs during certificate generation.
@@ -42,6 +45,7 @@ public class X509CertificateParser {
 
   /**
    * Gets subject alternative names. It is standalone because could throw an exception.
+   *
    * @param certificate {@link X509Certificate} X509Certificate object.
    * @return collection of lists with subject alternative names.
    * @throws ServiceException if an error occurs during subject alt names parsing.
@@ -58,11 +62,13 @@ public class X509CertificateParser {
 
   /**
    * Util method to create a string representation of subject alt names collection.
+   *
    * @param altNamesList collection of lists with subject alternative names.
    * @return String representation of subject alt names.
    */
   public static String parseSubjectAltNames(Collection<List<?>> altNamesList) {
-    return altNamesList.stream()
+    return altNamesList
+        .stream()
         .filter(list -> list.size() >= 2)
         .map(list -> list.get(1).toString())
         .collect(Collectors.joining(", "));

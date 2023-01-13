@@ -22,12 +22,12 @@ import java.util.Map;
 
 /**
  * Admin Handler class to get information about a domain certificate.
+ *
  * @author Yuliya Aheeva
  * @since 23.2.0
  */
 public class GetDomainCert extends AdminDocumentHandler {
   private static final String DATE_PATTERN = "MMM dd yyyy HH:mm:ss z";
-
 
   /**
    * Handles the request. Searches a domain by id, checks admin rights (accessible to global and
@@ -62,8 +62,8 @@ public class GetDomainCert extends AdminDocumentHandler {
 
     checkDomainRight(zsc, domain, Admin.R_getDomain);
 
-    X509Certificate x509Certificate = X509CertificateParser.generateCertificate(
-        domain.getSSLCertificate().getBytes());
+    X509Certificate x509Certificate =
+        X509CertificateParser.generateCertificate(domain.getSSLCertificate().getBytes());
 
     ZimbraLog.security.info("Parsing the cert info for domain: " + domainId);
 
@@ -99,5 +99,4 @@ public class GetDomainCert extends AdminDocumentHandler {
     DateFormat dateFormat = new SimpleDateFormat(DATE_PATTERN);
     return dateFormat.format(date);
   }
-
 }
