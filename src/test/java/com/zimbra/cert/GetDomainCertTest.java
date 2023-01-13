@@ -18,6 +18,7 @@ import com.zimbra.common.soap.SoapProtocol;
 import com.zimbra.cs.account.AuthToken;
 import com.zimbra.cs.account.Domain;
 import com.zimbra.cs.account.Provisioning;
+import com.zimbra.cs.service.admin.AdminAccessControl;
 import com.zimbra.soap.SoapEngine;
 import com.zimbra.soap.ZimbraSoapContext;
 import java.util.HashMap;
@@ -82,6 +83,7 @@ public class GetDomainCertTest {
                 + "-----END CERTIFICATE-----\n");
 
     final GetDomainCert getDomainCert = new DumbGetDomainCertHandler();
+
     final XMLElement request = new XMLElement(GET_DOMAIN_CERT_REQUEST);
     request.addNonUniqueElement(A_DOMAIN).addText(domainId);
 
@@ -139,5 +141,14 @@ public class GetDomainCertTest {
     assertEquals(certElem.getElement(E_SUBJECT).getText(), "CN=webmail-acme.demo.zextras.io");
     assertEquals(certElem.getElement(E_SUBJECT_ALT_NAME).getText(), "webmail-acme.demo.zextras.io");
     assertEquals(certElem.getElement(E_ISSUER).getText(), "CN=R3,O=Let's Encrypt,C=US");
+  }
+
+  //skip checking global and delegated admin rights
+  private static class DumbGetDomainCertHandler extends GetDomainCert {
+
+    @Override
+    protected AdminAccessControl checkDomainRight(ZimbraSoapContext zsc, Domain d, Object needed) {
+      return mock(AdminAccessControl.class);
+    }
   }
 }
