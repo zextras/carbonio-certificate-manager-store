@@ -67,7 +67,8 @@ public class GetDomainCertTest {
     request.addNonUniqueElement(A_DOMAIN).addText(domainId);
 
     expectedEx.expect(ServiceException.class);
-    expectedEx.expectMessage("Domain with id domainId could not be found.");
+    expectedEx.expectMessage("Certificate for Domain with id "
+        + domainId + " could not be found.");
     getDomainCert.handle(request, context);
   }
 
