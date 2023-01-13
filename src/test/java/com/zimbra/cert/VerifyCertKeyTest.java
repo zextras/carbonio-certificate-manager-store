@@ -7,7 +7,7 @@ import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-import com.zimbra.cert.util.processstarter.ProcessStarter;
+import com.zimbra.cert.util.ProcessStarter;
 import com.zimbra.common.service.ServiceException;
 import com.zimbra.common.soap.CertMgrConstants;
 import com.zimbra.common.soap.Element;

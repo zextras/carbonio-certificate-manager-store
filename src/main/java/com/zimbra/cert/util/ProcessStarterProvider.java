@@ -1,4 +1,4 @@
-package com.zimbra.cert.util.processstarter;
+package com.zimbra.cert.util;
 
 import java.io.IOException;
 

@@ -1,6 +1,5 @@
 package com.zimbra.cert;
 
-import com.zimbra.cert.util.DateFormatter;
 import com.zimbra.cert.util.X509CertificateParser;
 import com.zimbra.common.account.Key.DomainBy;
 import com.zimbra.common.service.ServiceException;
@@ -14,22 +13,29 @@ import com.zimbra.cs.account.accesscontrol.Rights.Admin;
 import com.zimbra.cs.service.admin.AdminDocumentHandler;
 import com.zimbra.soap.ZimbraSoapContext;
 import java.security.cert.X509Certificate;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.Collection;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
 /**
  * Admin Handler class to get information about a domain certificate.
+ * @author Yuliya Aheeva
+ * @since 23.2.0
  */
 public class GetDomainCert extends AdminDocumentHandler {
+  private static final String DATE_PATTERN = "MMM dd yyyy HH:mm:ss z";
+
 
   /**
-   * Handles the request. Searches a domain by name, checks admin rights (accessible to global and
+   * Handles the request. Searches a domain by id, checks admin rights (accessible to global and
    * delegated admin of requested domain), decrypts X.509 certificate, creates response element.
    *
    * @param request {@link Element} representation of {@link
    *     com.zimbra.soap.admin.message.GetDomainCertRequest}
-   * @param context request context
+   * @param context request context.
    * @return {@link Element} representation of {@link
    *     com.zimbra.soap.admin.message.GetDomainCertResponse}
    * @throws ServiceException in case if a requested domain could not be found or if an error occurs
@@ -47,6 +53,11 @@ public class GetDomainCert extends AdminDocumentHandler {
     if (domain == null) {
       throw ServiceException.INVALID_REQUEST(
           "Domain with id " + domainId + " could not be found.", null);
+    }
+
+    if (domain.getSSLCertificate() == null) {
+      throw ServiceException.INVALID_REQUEST(
+          "Certificate for Domain with id " + domainId + " could not be found.", null);
     }
 
     checkDomainRight(zsc, domain, Admin.R_getDomain);
@@ -74,12 +85,18 @@ public class GetDomainCert extends AdminDocumentHandler {
     addChildElem(el, CertMgrConstants.E_SUBJECT, cert.getSubjectX500Principal().getName());
     addChildElem(el, CertMgrConstants.E_SUBJECT_ALT_NAME, subjectAltNames);
     addChildElem(el, CertMgrConstants.E_ISSUER, cert.getIssuerX500Principal().getName());
-    addChildElem(el, CertMgrConstants.E_NOT_BEFORE, DateFormatter.formatDate(cert.getNotBefore()));
-    addChildElem(el, CertMgrConstants.E_NOT_AFTER, DateFormatter.formatDate(cert.getNotAfter()));
+    addChildElem(el, CertMgrConstants.E_NOT_BEFORE, formatDate(cert.getNotBefore()));
+    addChildElem(el, CertMgrConstants.E_NOT_AFTER, formatDate(cert.getNotAfter()));
   }
 
   private void addChildElem(Element parentElement, String name, String value) {
     Element childElement = parentElement.addNonUniqueElement(name);
     childElement.setText(value);
   }
+
+  private String formatDate(Date date) {
+    DateFormat dateFormat = new SimpleDateFormat(DATE_PATTERN);
+    return dateFormat.format(date);
+  }
+
 }

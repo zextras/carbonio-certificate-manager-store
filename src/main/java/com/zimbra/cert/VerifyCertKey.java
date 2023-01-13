@@ -5,7 +5,7 @@
 
 package com.zimbra.cert;
 
-import com.zimbra.cert.util.processstarter.ProcessStarter;
+import com.zimbra.cert.util.ProcessStarter;
 import com.zimbra.common.service.ServiceException;
 import com.zimbra.common.soap.CertMgrConstants;
 import com.zimbra.common.soap.Element;
