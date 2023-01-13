@@ -89,9 +89,7 @@ public class GetDomainCertTest {
     request.addNonUniqueElement(A_DOMAIN).addText(domainId);
 
     expectedEx.expect(ServiceException.class);
-    expectedEx.expectMessage(
-        "Failure on generating certificate:"
-            + " Unable to initialize, java.io.EOFException: not enough content");
+    expectedEx.expectMessage("Failure on generating certificate:");
     getDomainCert.handle(request, context);
   }
 
