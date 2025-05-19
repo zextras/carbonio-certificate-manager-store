@@ -5,7 +5,7 @@ def mvnCmd(String cmd) {
 pipeline {
     agent {
         node {
-            label 'carbonio-agent-v1'
+            label 'zextras-v1'
         }
     }
     environment {
@@ -23,15 +23,17 @@ pipeline {
             steps {
                 checkout scm
                 withCredentials([file(credentialsId: 'jenkins-maven-settings.xml', variable: 'SETTINGS_PATH')]) {
-                  sh "cp ${SETTINGS_PATH} settings-jenkins.xml"
+                  sh 'cp $SETTINGS_PATH settings-jenkins.xml'
                 }
             }
         }
         stage('Build with tests') {
             steps {
-              mvnCmd("clean verify")
-              publishCoverage adapters: [jacocoAdapter(path: '**/target/site/jacoco/jacoco.xml')], calculateDiffForChangeRequests: true, failNoReports: true
-              junit allowEmptyResults: true, testResults: '**/target/surefire-reports/*.xml'
+              container('jdk-17') {
+                mvnCmd("clean verify")
+                recordCoverage(tools: [[parser: 'JACOCO']],sourceCodeRetention: 'MODIFIED')
+                junit allowEmptyResults: true, testResults: '**/target/surefire-reports/*.xml'
+              }
             }
         }
 
@@ -40,7 +42,9 @@ pipeline {
                 branch 'devel'
             }
             steps {
-                mvnCmd("deploy -Pdev")
+                container('jdk-17') {
+                    mvnCmd("deploy -Pdev")
+                }
             }
         }
 
@@ -49,7 +53,9 @@ pipeline {
                 buildingTag()
             }
             steps {
-                mvnCmd("deploy -Pprod")
+                container('jdk-17') {
+                    mvnCmd("deploy -Pprod")
+                }
             }
         }
     }
